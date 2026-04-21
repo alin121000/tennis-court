@@ -217,6 +217,12 @@ app.patch('/api/users/:id', requireAuth, requireAdmin, async (req, res) => {
   res.json(rows[0]);
 });
 
+app.post('/api/users/:id/approve', requireAuth, requireAdmin, async (req, res) => {
+  const { approved } = req.body;
+  const { rows } = await pool.query('UPDATE users SET approved=$1 WHERE id=$2 RETURNING *', [approved, req.params.id]);
+  res.json(rows[0]);
+});
+
 app.delete('/api/users/:id', requireAuth, requireAdmin, async (req, res) => {
   await pool.query('DELETE FROM users WHERE id=$1 AND is_admin=false', [req.params.id]);
   res.json({ ok: true });
