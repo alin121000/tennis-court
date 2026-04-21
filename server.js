@@ -84,13 +84,27 @@ app.post('/api/auth/check-phone', async (req, res) => {
 // Login with PIN
 app.post('/api/auth/login', async (req, res) => {
   const { phone, pin } = req.body;
-  console.log('[LOGIN] attempt for phone:', phone, 'pin length:', pin?.length);
+  const cleanPin = String(pin).trim();
+  console.log('[LOGIN] phone:', phone, 'pin:', JSON.stringify(cleanPin));
   const { rows } = await pool.query('SELECT * FROM users WHERE phone=$1', [phone]);
-  if (!rows.length) { console.log('[LOGIN] phone not found'); return res.status(401).json({ error: 'Invalid credentials' }); }
+  if (!rows.length) return res.status(401).json({ error: 'Invalid credentials' });
   const user = rows[0];
-  console.log('[LOGIN] found user:', user.fname, 'hash prefix:', user.pin_hash?.slice(0,10));
-  const match = await bcrypt.compare(pin, user.pin_hash);
-  console.log('[LOGIN] bcrypt match:', match);
+  console.log('[LOGIN] hash:', user.pin_hash);
+  // support plain text pins for initial setup (remove after first login)
+  let match = false;
+  if (user.pin_hash && user.pin_hash.startsWith('$$plain$$')) {
+    match = cleanPin === user.pin_hash.replace('$$plain$$', '');
+    console.log('[LOGIN] plain match:', match);
+    if (match) {
+      // upgrade to bcrypt immediately
+      const newHash = await bcrypt.hash(cleanPin, 10);
+      await pool.query('UPDATE users SET pin_hash=$1 WHERE id=$2', [newHash, user.id]);
+      console.log('[LOGIN] upgraded to bcrypt hash');
+    }
+  } else {
+    match = await bcrypt.compare(cleanPin, user.pin_hash);
+    console.log('[LOGIN] bcrypt match:', match);
+  }
   if (!match) return res.status(401).json({ error: 'Invalid credentials' });
   req.session.userId = user.id;
   req.session.isAdmin = user.is_admin;
