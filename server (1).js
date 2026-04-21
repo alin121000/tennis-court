@@ -25,7 +25,7 @@ app.use(session({
   secret: process.env.SESSION_SECRET || 'change-me-in-production',
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: process.env.NODE_ENV === 'production', maxAge: 7 * 24 * 60 * 60 * 1000 }
+  cookie: { secure: false, sameSite: 'lax', maxAge: 7 * 24 * 60 * 60 * 1000 }
 }));
 
 // ── auth middleware ───────────────────────────────────────
@@ -84,10 +84,13 @@ app.post('/api/auth/check-phone', async (req, res) => {
 // Login with PIN
 app.post('/api/auth/login', async (req, res) => {
   const { phone, pin } = req.body;
+  console.log('[LOGIN] attempt for phone:', phone, 'pin length:', pin?.length);
   const { rows } = await pool.query('SELECT * FROM users WHERE phone=$1', [phone]);
-  if (!rows.length) return res.status(401).json({ error: 'Invalid credentials' });
+  if (!rows.length) { console.log('[LOGIN] phone not found'); return res.status(401).json({ error: 'Invalid credentials' }); }
   const user = rows[0];
+  console.log('[LOGIN] found user:', user.fname, 'hash prefix:', user.pin_hash?.slice(0,10));
   const match = await bcrypt.compare(pin, user.pin_hash);
+  console.log('[LOGIN] bcrypt match:', match);
   if (!match) return res.status(401).json({ error: 'Invalid credentials' });
   req.session.userId = user.id;
   req.session.isAdmin = user.is_admin;
