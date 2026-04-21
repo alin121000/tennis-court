@@ -1,6 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const session = require('express-session');
+const pgSession = require('connect-pg-simple')(session);
 const { Pool } = require('pg');
 const path = require('path');
 require('dotenv').config();
@@ -20,10 +21,11 @@ const FROM_EMAIL = process.env.FROM_EMAIL || 'onboarding@resend.dev';
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(session({
+  store: new pgSession({ pool, createTableIfMissing: true }),
   secret: process.env.SESSION_SECRET || 'change-me-in-production',
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: false, sameSite: 'lax', maxAge: 7 * 24 * 60 * 60 * 1000 }
+  cookie: { secure: false, sameSite: 'lax', httpOnly: true, maxAge: 7 * 24 * 60 * 60 * 1000 }
 }));
 
 // ── auth middleware ───────────────────────────────────────
@@ -109,7 +111,8 @@ app.post('/api/auth/login', async (req, res) => {
   if (!match) return res.status(401).json({ error: 'Invalid credentials' });
   req.session.userId = user.id;
   req.session.isAdmin = user.is_admin;
-  res.json({ id: user.id, fname: user.fname, lname: user.lname, apt: user.apt, phone: user.phone, isAdmin: user.is_admin, approved: user.approved });
+  await new Promise((resolve, reject) => req.session.save(err => err ? reject(err) : resolve()));
+  res.json({ id: user.id, fname: user.fname, lname: user.lname, apt: user.apt, phone: user.phone, email: user.email, isAdmin: user.is_admin, approved: user.approved });
 });
 
 app.post('/api/auth/logout', (req, res) => {
@@ -131,10 +134,10 @@ app.post('/api/auth/change-pin', requireAuth, async (req, res) => {
 
 app.get('/api/auth/me', async (req, res) => {
   if (!req.session.userId) return res.status(401).json({ error: 'Not authenticated' });
-  const { rows } = await pool.query('SELECT id,fname,lname,apt,phone,is_admin,approved FROM users WHERE id=$1', [req.session.userId]);
+  const { rows } = await pool.query('SELECT id,fname,lname,apt,phone,email,is_admin,approved FROM users WHERE id=$1', [req.session.userId]);
   if (!rows.length) return res.status(401).json({ error: 'User not found' });
   const u = rows[0];
-  res.json({ id: u.id, fname: u.fname, lname: u.lname, apt: u.apt, phone: u.phone, isAdmin: u.is_admin, approved: u.approved });
+  res.json({ id: u.id, fname: u.fname, lname: u.lname, apt: u.apt, phone: u.phone, email: u.email, isAdmin: u.is_admin, approved: u.approved });
 });
 
 // ── routes: registration ──────────────────────────────────
@@ -170,8 +173,8 @@ app.post('/api/auth/register', async (req, res) => {
   if (existing.rows.length) return res.status(409).json({ error: 'Phone already registered' });
   const pinHash = await bcrypt.hash(pin, 10);
   const { rows } = await pool.query(
-    'INSERT INTO users (fname,lname,apt,phone,pin_hash,is_admin,approved) VALUES ($1,$2,$3,$4,$5,false,false) RETURNING id,fname,lname,apt,phone',
-    [fname, lname, apt, phone, pinHash]
+    'INSERT INTO users (fname,lname,apt,phone,email,pin_hash,is_admin,approved) VALUES ($1,$2,$3,$4,$5,$6,false,false) RETURNING id,fname,lname,apt,phone,email',
+    [fname, lname, apt, phone, email, pinHash]
   );
   otpCodes.delete(email);
   await pool.query(

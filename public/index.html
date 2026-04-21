@@ -222,11 +222,42 @@ input:focus{outline:none;border-color:#378ADD;}
 
   <!-- PROFILE (all users) -->
   <div id="tab-profile" style="display:none;">
-    <div class="card">
-      <p style="font-size:15px;font-weight:500;margin-bottom:4px;" id="profile-name"></p>
-      <p style="font-size:13px;color:#888;margin-bottom:16px;" id="profile-details"></p>
-      <div style="border-top:0.5px solid rgba(0,0,0,0.07);padding-top:16px;">
-        <p style="font-size:14px;font-weight:500;margin-bottom:12px;">Change PIN</p>
+
+    <!-- info view -->
+    <div id="profile-view">
+      <div class="card">
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
+          <div class="avatar" id="profile-avatar" style="width:52px;height:52px;font-size:16px;"></div>
+          <div>
+            <p style="font-size:16px;font-weight:500;" id="profile-name"></p>
+            <p style="font-size:12px;color:#888;">Tenant</p>
+          </div>
+        </div>
+        <div style="border-top:0.5px solid rgba(0,0,0,0.07);padding-top:12px;">
+          <div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:0.5px solid rgba(0,0,0,0.05);">
+            <span style="font-size:13px;color:#888;">Apartment</span>
+            <span style="font-size:13px;font-weight:500;" id="profile-apt"></span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:0.5px solid rgba(0,0,0,0.05);">
+            <span style="font-size:13px;color:#888;">Phone</span>
+            <span style="font-size:13px;font-weight:500;" id="profile-phone"></span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:9px 0;">
+            <span style="font-size:13px;color:#888;">Email</span>
+            <span style="font-size:13px;font-weight:500;" id="profile-email"></span>
+          </div>
+        </div>
+      </div>
+      <button style="width:100%;padding:10px;border-radius:8px;border:0.5px solid rgba(0,0,0,0.15);background:transparent;font-size:14px;cursor:pointer;" onclick="showPinForm()">Change PIN</button>
+    </div>
+
+    <!-- change PIN form (hidden by default) -->
+    <div id="profile-pin-form" style="display:none;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:1.25rem;">
+        <button onclick="hidePinForm()" style="background:none;border:none;cursor:pointer;font-size:20px;color:#888;">&#8592;</button>
+        <p style="font-size:16px;font-weight:500;">Change PIN</p>
+      </div>
+      <div class="card">
         <label>Current PIN</label>
         <input type="password" id="pin-current" maxlength="4" placeholder="••••" style="letter-spacing:6px;font-size:20px;text-align:center;"/>
         <label>New PIN</label>
@@ -237,6 +268,7 @@ input:focus{outline:none;border-color:#378ADD;}
         <button style="margin-top:14px;width:100%;padding:10px;border-radius:8px;border:none;background:#1a1a1a;color:#fff;font-size:15px;cursor:pointer;" onclick="changePin()">Update PIN</button>
       </div>
     </div>
+
   </div>
 
   <!-- BOOK -->
@@ -513,12 +545,28 @@ function showTab(tab){
 }
 
 function renderProfile(){
-  document.getElementById('profile-name').textContent=currentUser.fname+(currentUser.lname?' '+currentUser.lname:'');
-  document.getElementById('profile-details').textContent=(currentUser.apt&&currentUser.apt!=='—'?'Apt '+currentUser.apt+' · ':'')+currentUser.phone;
+  const u=currentUser;
+  const av=initials(u);
+  document.getElementById('profile-avatar').textContent=av;
+  document.getElementById('profile-name').textContent=u.fname+(u.lname?' '+u.lname:'');
+  document.getElementById('profile-apt').textContent=u.apt&&u.apt!=='—'?u.apt:'—';
+  document.getElementById('profile-phone').textContent=u.phone||'—';
+  document.getElementById('profile-email').textContent=u.email||'—';
+  hidePinForm();
+}
+
+function showPinForm(){
+  document.getElementById('profile-view').style.display='none';
+  document.getElementById('profile-pin-form').style.display='block';
   document.getElementById('pin-current').value='';
   document.getElementById('pin-new').value='';
   document.getElementById('pin-confirm').value='';
   document.getElementById('pin-msg').innerHTML='';
+}
+
+function hidePinForm(){
+  document.getElementById('profile-view').style.display='block';
+  document.getElementById('profile-pin-form').style.display='none';
 }
 
 async function changePin(){
