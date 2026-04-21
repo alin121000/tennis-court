@@ -207,6 +207,7 @@ input:focus{outline:none;border-color:#378ADD;}
   <div class="tab-bar" id="user-tabs">
     <button class="tab active" onclick="showTab('book')">Book</button>
     <button class="tab" onclick="showTab('my')">My bookings</button>
+    <button class="tab" onclick="showTab('profile')">Profile</button>
   </div>
   <div class="tab-bar" id="admin-tabs" style="display:none;">
     <button class="tab active" onclick="showTab('book')">Book</button>
@@ -216,6 +217,26 @@ input:focus{outline:none;border-color:#378ADD;}
     <button class="tab" onclick="showTab('stats')">Stats</button>
     <button class="tab" onclick="showTab('approvals')">Approvals</button>
     <button class="tab" id="notif-tab" onclick="showTab('notifications')">Alerts <span id="notif-tab-dot" style="display:none;" class="notif-dot"></span></button>
+    <button class="tab" onclick="showTab('profile')">Profile</button>
+  </div>
+
+  <!-- PROFILE (all users) -->
+  <div id="tab-profile" style="display:none;">
+    <div class="card">
+      <p style="font-size:15px;font-weight:500;margin-bottom:4px;" id="profile-name"></p>
+      <p style="font-size:13px;color:#888;margin-bottom:16px;" id="profile-details"></p>
+      <div style="border-top:0.5px solid rgba(0,0,0,0.07);padding-top:16px;">
+        <p style="font-size:14px;font-weight:500;margin-bottom:12px;">Change PIN</p>
+        <label>Current PIN</label>
+        <input type="password" id="pin-current" maxlength="4" placeholder="••••" style="letter-spacing:6px;font-size:20px;text-align:center;"/>
+        <label>New PIN</label>
+        <input type="password" id="pin-new" maxlength="4" placeholder="••••" style="letter-spacing:6px;font-size:20px;text-align:center;"/>
+        <label>Confirm new PIN</label>
+        <input type="password" id="pin-confirm" maxlength="4" placeholder="••••" style="letter-spacing:6px;font-size:20px;text-align:center;"/>
+        <div id="pin-msg" style="margin-top:10px;"></div>
+        <button style="margin-top:14px;width:100%;padding:10px;border-radius:8px;border:none;background:#1a1a1a;color:#fff;font-size:15px;cursor:pointer;" onclick="changePin()">Update PIN</button>
+      </div>
+    </div>
   </div>
 
   <!-- BOOK -->
@@ -474,7 +495,7 @@ async function submitReg(){
 
 // ── tabs ──────────────────────────────────────────────────
 function showTab(tab){
-  ['book','schedule','my','tenants','stats','approvals','notifications'].forEach(t=>{
+  ['book','schedule','my','tenants','stats','approvals','notifications','profile'].forEach(t=>{
     const el=document.getElementById('tab-'+t);if(el)el.style.display=(t===tab)?'':'none';
   });
   document.querySelectorAll('#admin-tabs .tab,#user-tabs .tab').forEach(b=>b.classList.remove('active'));
@@ -488,6 +509,35 @@ function showTab(tab){
   if(tab==='stats')renderStats();
   if(tab==='approvals'){renderApprovals();if(highlightUserId){setTimeout(()=>scrollHighlightUser(highlightUserId),80);highlightUserId=null;}}
   if(tab==='notifications')renderNotifications();
+  if(tab==='profile')renderProfile();
+}
+
+function renderProfile(){
+  document.getElementById('profile-name').textContent=currentUser.fname+(currentUser.lname?' '+currentUser.lname:'');
+  document.getElementById('profile-details').textContent=(currentUser.apt&&currentUser.apt!=='—'?'Apt '+currentUser.apt+' · ':'')+currentUser.phone;
+  document.getElementById('pin-current').value='';
+  document.getElementById('pin-new').value='';
+  document.getElementById('pin-confirm').value='';
+  document.getElementById('pin-msg').innerHTML='';
+}
+
+async function changePin(){
+  const current=document.getElementById('pin-current').value.trim();
+  const newPin=document.getElementById('pin-new').value.trim();
+  const confirm=document.getElementById('pin-confirm').value.trim();
+  const msg=document.getElementById('pin-msg');
+  if(!current||!newPin||!confirm){msg.innerHTML='<div class="msg msg-error">Please fill in all fields.</div>';return;}
+  if(newPin.length!==4||!/^\d+$/.test(newPin)){msg.innerHTML='<div class="msg msg-error">New PIN must be exactly 4 digits.</div>';return;}
+  if(newPin!==confirm){msg.innerHTML='<div class="msg msg-error">New PINs don\'t match.</div>';return;}
+  try{
+    await apiPost('/auth/change-pin',{currentPin:current,newPin});
+    msg.innerHTML='<div class="msg msg-success">PIN updated successfully!</div>';
+    document.getElementById('pin-current').value='';
+    document.getElementById('pin-new').value='';
+    document.getElementById('pin-confirm').value='';
+  }catch(e){
+    msg.innerHTML='<div class="msg msg-error">Current PIN is incorrect.</div>';
+  }
 }
 
 function changeDay(d){
@@ -650,7 +700,12 @@ function renderTenants(){
   }).join('');
 }
 async function revokeUser(id){
-  try{ await apiPost('/users/'+id+'/approve',{approved:false}); users=users.map(u=>u.id===id?{...u,approved:false}:u); renderTenants(); }catch(e){}
+  try{
+    await apiPost('/users/'+id+'/approve',{approved:false});
+    await loadAppData();
+    renderTenants();
+    showToast('Access revoked.');
+  }catch(e){showToast('Error revoking access.');}
 }
 async function approveUser(id){
   try{ await apiPost('/users/'+id+'/approve',{approved:true}); users=users.map(u=>u.id===id?{...u,approved:true}:u); renderApprovals(); showToast('Tenant approved.'); }catch(e){}
@@ -719,9 +774,30 @@ function scrollHighlightUser(id){
   card.style.transition='background 0s';card.style.background='#B5D4F4';
   setTimeout(()=>{card.style.transition='background 1.5s';card.style.background='';},120);
 }
-function approveUser(id){users=users.map(u=>u.id===id?{...u,approved:true}:u);renderApprovals();showToast('Tenant approved.');}
-function denyUser(id){users=users.filter(u=>u.id!==id);renderApprovals();showToast('Registration denied.');}
-function revokeUser2(id){users=users.map(u=>u.id===id?{...u,approved:false}:u);renderApprovals();}
+async function approveUser(id){
+  try{
+    await apiPost('/users/'+id+'/approve',{approved:true});
+    await loadAppData();
+    renderApprovals();
+    showToast('Tenant approved.');
+  }catch(e){showToast('Error approving tenant.');}
+}
+async function denyUser(id){
+  try{
+    await apiDelete('/users/'+id);
+    await loadAppData();
+    renderApprovals();
+    showToast('Registration denied.');
+  }catch(e){showToast('Error denying registration.');}
+}
+async function revokeUser2(id){
+  try{
+    await apiPost('/users/'+id+'/approve',{approved:false});
+    await loadAppData();
+    renderApprovals();
+    showToast('Access revoked.');
+  }catch(e){showToast('Error revoking access.');}
+}
 
 // ── notifications ─────────────────────────────────────────
 function handleNotifClick(n){

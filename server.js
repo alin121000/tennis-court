@@ -117,6 +117,18 @@ app.post('/api/auth/logout', (req, res) => {
   res.json({ ok: true });
 });
 
+app.post('/api/auth/change-pin', requireAuth, async (req, res) => {
+  const { currentPin, newPin } = req.body;
+  if (!/^\d{4}$/.test(newPin)) return res.status(400).json({ error: 'PIN must be 4 digits' });
+  const { rows } = await pool.query('SELECT pin_hash FROM users WHERE id=$1', [req.session.userId]);
+  if (!rows.length) return res.status(404).json({ error: 'User not found' });
+  const match = await bcrypt.compare(currentPin, rows[0].pin_hash);
+  if (!match) return res.status(401).json({ error: 'Current PIN is incorrect' });
+  const newHash = await bcrypt.hash(newPin, 10);
+  await pool.query('UPDATE users SET pin_hash=$1 WHERE id=$2', [newHash, req.session.userId]);
+  res.json({ ok: true });
+});
+
 app.get('/api/auth/me', async (req, res) => {
   if (!req.session.userId) return res.status(401).json({ error: 'Not authenticated' });
   const { rows } = await pool.query('SELECT id,fname,lname,apt,phone,is_admin,approved FROM users WHERE id=$1', [req.session.userId]);
