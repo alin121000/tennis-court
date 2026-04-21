@@ -321,24 +321,29 @@ async function apiDelete(path){
   return r.json();
 }
 
-// seed demo data (used when backend is not present)
-function seedDemo(){
-  users=[
-    {id:'admin',fname:'Admin',lname:'',apt:'—',phone:'000 0000000',isAdmin:true,approved:true},
-    {id:'u1',fname:'Dana',lname:'Levy',apt:'3',phone:'050 1111111',isAdmin:false,approved:true},
-    {id:'u2',fname:'Yoav',lname:'Ben',apt:'7',phone:'050 2222222',isAdmin:false,approved:true},
-    {id:'u3',fname:'Mia',lname:'Cohen',apt:'2',phone:'050 3333333',isAdmin:false,approved:true},
-    {id:'u4',fname:'Ron',lname:'Katz',apt:'5',phone:'050 4444444',isAdmin:false,approved:false},
-  ];
-  [[0,7,'u1'],[0,9,'u2'],[0,12,'u3'],[1,8,'u2'],[1,9,'u3'],[1,18,'u1'],[-1,7,'u3'],[-1,9,'u1'],[-1,18,'u2'],[2,8,'u1'],[2,9,'u2'],[2,18,'u3']]
-    .forEach(([d,h,uid])=>{bookings[dateKey(d)+'_'+h]=uid;});
-  notifications=[
-    {id:'n1',type:'reg',targetUserId:'u4',text:'Ron Katz (Apt 5) submitted a registration request.',time:'2 min ago',read:false},
-    {id:'n2',type:'book',targetDate:dateKey(0),targetHour:7,text:'Dana Levy booked today at 07:00.',time:'1 hr ago',read:false},
-    {id:'n3',type:'book',targetDate:dateKey(0),targetHour:9,text:'Yoav Ben booked today at 09:00.',time:'2 hrs ago',read:true},
-  ];
+// check if already logged in on page load
+(async()=>{
+  try{
+    const u=await apiGet('/auth/me');
+    if(u&&u.id){ currentUser=u; await loadAppData(); mountApp(u); }
+  }catch(e){ /* not logged in, stay on login screen */ }
+})();
+
+async function loadAppData(){
+  try{
+    // load users list (admin only, others get empty)
+    if(currentUser.isAdmin){
+      const u=await apiGet('/users');
+      users=u.map(x=>({id:x.id,fname:x.fname,lname:x.lname,apt:x.apt,phone:x.phone,isAdmin:x.is_admin,approved:x.approved}));
+      const n=await apiGet('/notifications');
+      notifications=n.map(x=>({id:x.id,type:x.type,text:x.text,time:new Date(x.created_at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}),read:x.read,targetUserId:x.target_user_id,targetDate:x.target_date,targetHour:x.target_hour}));
+    }
+    // load today's bookings
+    const b=await apiGet('/bookings');
+    bookings={};
+    b.forEach(r=>{ bookings[r.date+'_'+r.hour]=r.user_id; if(!users.find(u=>u.id===r.user_id)) users.push({id:r.user_id,fname:r.fname,lname:r.lname}); });
+  }catch(e){ console.error('loadAppData error',e); }
 }
-seedDemo(); // remove this line when connected to real backend
 
 // ── notifications ─────────────────────────────────────────
 function addNotification(type,text,extra={}){
@@ -356,29 +361,35 @@ function updateNotifBadge(){
 function markAllRead(){notifications.forEach(n=>n.read=true);updateNotifBadge();renderNotifications();}
 
 // ── login ─────────────────────────────────────────────────
-function doLoginStep1(){
+async function doLoginStep1(){
   const phone=document.getElementById('login-phone').value.trim();
   const msg=document.getElementById('login-msg');
   msg.innerHTML='';
-  const u=users.find(x=>x.phone===phone);
-  if(!u){msg.innerHTML='<div class="msg msg-error" style="margin-top:10px;">Phone number not found.</div>';return;}
-  loginCandidate=u;
-  document.getElementById('login2-name').textContent=u.fname+(u.lname?' '+u.lname:'');
-  document.getElementById('login-pin').value='';
-  document.getElementById('login2-msg').innerHTML='';
-  showScreen('screen-login2');
-  setTimeout(()=>document.getElementById('login-pin').focus(),200);
+  try{
+    const data=await apiPost('/auth/check-phone',{phone});
+    loginCandidate={phone,...data};
+    document.getElementById('login2-name').textContent=data.fname+(data.lname?' '+data.lname:'');
+    document.getElementById('login-pin').value='';
+    document.getElementById('login2-msg').innerHTML='';
+    showScreen('screen-login2');
+    setTimeout(()=>document.getElementById('login-pin').focus(),200);
+  }catch(e){
+    msg.innerHTML='<div class="msg msg-error" style="margin-top:10px;">Phone number not found.</div>';
+  }
 }
 
-function doLoginStep2(){
+async function doLoginStep2(){
   const pin=document.getElementById('login-pin').value.trim();
   const msg=document.getElementById('login2-msg');
-  // In real app: validate against backend. Here we check stored pin.
-  const u=users.find(x=>x.id===loginCandidate.id&&x.pin===pin);
-  if(!u){msg.innerHTML='<div class="msg msg-error" style="margin-top:10px;">Incorrect PIN.</div>';return;}
-  currentUser=u;
-  if(!u.approved&&!u.isAdmin){showScreen('screen-pending');return;}
-  mountApp(u);
+  try{
+    const u=await apiPost('/auth/login',{phone:loginCandidate.phone,pin});
+    currentUser={...u,isAdmin:u.isAdmin};
+    if(!u.approved&&!u.isAdmin){showScreen('screen-pending');return;}
+    await loadAppData();
+    mountApp(currentUser);
+  }catch(e){
+    msg.innerHTML='<div class="msg msg-error" style="margin-top:10px;">Incorrect PIN.</div>';
+  }
 }
 
 function mountApp(u){
@@ -394,10 +405,14 @@ function mountApp(u){
   showTab('book');
 }
 
-function doLogout(){currentUser=null;loginCandidate=null;showScreen('screen-login');}
+async function doLogout(){
+  try{ await apiPost('/auth/logout',{}); }catch(e){}
+  currentUser=null;loginCandidate=null;users=[];bookings={};notifications=[];
+  showScreen('screen-login');
+}
 
 // ── registration ──────────────────────────────────────────
-function goRegStep2(){
+async function goRegStep2(){
   const fname=document.getElementById('reg-fname').value.trim();
   const lname=document.getElementById('reg-lname').value.trim();
   const apt=document.getElementById('reg-apt').value.trim();
@@ -405,41 +420,54 @@ function goRegStep2(){
   const msg=document.getElementById('reg1-msg');
   if(!fname||!lname||!apt||!phone){msg.innerHTML='<div class="msg msg-error">Please fill in all fields.</div>';return;}
   if(!/^\d+$/.test(apt)){msg.innerHTML='<div class="msg msg-error">Apartment must be a number.</div>';return;}
-  if(users.find(u=>u.phone===phone)){msg.innerHTML='<div class="msg msg-error">This phone is already registered.</div>';return;}
-  pendingReg={fname,lname,apt,phone};
-  smsCode=Math.floor(1000+Math.random()*9000).toString();
-  document.getElementById('sms-target').textContent=phone;
-  document.getElementById('sms-preview').textContent='Your court booking verification code: '+smsCode+'. Valid for 10 minutes.';
-  document.getElementById('reg-code').value='';
-  document.getElementById('reg2-msg').innerHTML='';
-  msg.innerHTML='';
-  showScreen('screen-reg2');
-  // In production: POST to /api/auth/send-sms instead of showing preview
+  try{
+    const res=await apiPost('/auth/send-sms',{phone});
+    pendingReg={fname,lname,apt,phone};
+    document.getElementById('sms-target').textContent=phone;
+    // show dev code if returned (non-production)
+    const preview=res.devCode?`Your court booking verification code: ${res.devCode}. Valid for 10 minutes.`:'Code sent! Check your SMS.';
+    document.getElementById('sms-preview').textContent=preview;
+    document.getElementById('reg-code').value='';
+    document.getElementById('reg2-msg').innerHTML='';
+    msg.innerHTML='';
+    showScreen('screen-reg2');
+  }catch(e){
+    msg.innerHTML='<div class="msg msg-error">'+(e.message.includes('already')?'This phone is already registered.':'Error sending SMS. Try again.')+'</div>';
+  }
 }
 
-function verifyCode(){
-  const entered=document.getElementById('reg-code').value.trim();
-  if(entered!==smsCode){document.getElementById('reg2-msg').innerHTML='<div class="msg msg-error">Incorrect code. Try again.</div>';return;}
-  document.getElementById('reg-pin').value='';
-  document.getElementById('reg-pin2').value='';
-  document.getElementById('reg3-msg').innerHTML='';
-  showScreen('screen-reg3');
+async function verifyCode(){
+  const code=document.getElementById('reg-code').value.trim();
+  const msg=document.getElementById('reg2-msg');
+  try{
+    await apiPost('/auth/verify-sms',{phone:pendingReg.phone,code});
+    document.getElementById('reg-pin').value='';
+    document.getElementById('reg-pin2').value='';
+    document.getElementById('reg3-msg').innerHTML='';
+    showScreen('screen-reg3');
+  }catch(e){
+    msg.innerHTML='<div class="msg msg-error">Incorrect code. Try again.</div>';
+  }
 }
 
-function submitReg(){
+async function submitReg(){
   const pin=document.getElementById('reg-pin').value.trim();
   const pin2=document.getElementById('reg-pin2').value.trim();
   const msg=document.getElementById('reg3-msg');
   if(pin.length!==4||!/^\d+$/.test(pin)){msg.innerHTML='<div class="msg msg-error">PIN must be exactly 4 digits.</div>';return;}
   if(pin!==pin2){msg.innerHTML='<div class="msg msg-error">PINs don\'t match.</div>';return;}
-  const nu={id:genId(),...pendingReg,pin,isAdmin:false,approved:false};
-  users.push(nu);
-  addNotification('reg',`${nu.fname} ${nu.lname} (Apt ${nu.apt}) submitted a registration request.`,{targetUserId:nu.id});
-  document.getElementById('reg-summary').innerHTML=`
-    <p style="font-size:13px;margin-bottom:5px;color:#666;">Name: <strong style="color:#111;">${nu.fname} ${nu.lname}</strong></p>
-    <p style="font-size:13px;margin-bottom:5px;color:#666;">Apartment: <strong style="color:#111;">${nu.apt}</strong></p>
-    <p style="font-size:13px;color:#666;">Phone: <strong style="color:#111;">${nu.phone}</strong></p>`;
-  showScreen('screen-reg-done');
+  // get the verified code from the sms-preview (dev mode) or re-ask
+  const code=document.getElementById('reg-code').value.trim();
+  try{
+    const nu=await apiPost('/auth/register',{...pendingReg,pin,code});
+    document.getElementById('reg-summary').innerHTML=`
+      <p style="font-size:13px;margin-bottom:5px;color:#666;">Name: <strong style="color:#111;">${nu.fname} ${nu.lname}</strong></p>
+      <p style="font-size:13px;margin-bottom:5px;color:#666;">Apartment: <strong style="color:#111;">${nu.apt}</strong></p>
+      <p style="font-size:13px;color:#666;">Phone: <strong style="color:#111;">${nu.phone}</strong></p>`;
+    showScreen('screen-reg-done');
+  }catch(e){
+    msg.innerHTML='<div class="msg msg-error">Registration failed. Please start over.</div>';
+  }
 }
 
 // ── tabs ──────────────────────────────────────────────────
@@ -513,22 +541,31 @@ function renderSlots(){
   });
 }
 
-function bookSlot(key){
+async function bookSlot(key){
   if(currentDay>MAX_ADVANCE_DAYS){showMsg('You can only book up to '+MAX_ADVANCE_DAYS+' days in advance.','error');return;}
   if(userBookingOnDay(currentUser.id,currentDay)){showMsg('Only 1 booking per day allowed.','error');return;}
   if(bookings[key]){showMsg('Slot just taken.','error');renderSlots();return;}
-  bookings[key]=currentUser.id;
-  const h=parseInt(key.split('_')[1]);
-  addNotification('book',`${currentUser.fname} ${currentUser.lname} booked on ${dateLabel(currentDay)} at ${h.toString().padStart(2,'0')}:00.`,{targetDate:dateKey(currentDay),targetHour:h});
-  showToast('Booked!');renderSlots();
+  const[date,h]=key.split('_');
+  try{
+    await apiPost('/bookings',{date,hour:parseInt(h)});
+    bookings[key]=currentUser.id;
+    showToast('Booked!');renderSlots();
+  }catch(e){showMsg('Could not book. Try again.','error');}
 }
 
-function cancelSlot(key){delete bookings[key];showToast('Booking cancelled.');renderSlots();}
-function adminCancelBook(key){
-  const uid=bookings[key];const u=users.find(x=>x.id===uid);
-  delete bookings[key];
-  if(u)addNotification('book',`Admin removed booking for ${u.fname} ${u.lname}.`);
-  showToast('Booking removed.');renderSlots();
+async function cancelSlot(key){
+  const[date,h]=key.split('_');
+  try{
+    await apiDelete('/bookings/'+date+'/'+h);
+    delete bookings[key];showToast('Booking cancelled.');renderSlots();
+  }catch(e){showMsg('Could not cancel.','error');}
+}
+async function adminCancelBook(key){
+  const[date,h]=key.split('_');
+  try{
+    await apiDelete('/bookings/'+date+'/'+h);
+    delete bookings[key];showToast('Booking removed.');renderSlots();
+  }catch(e){showMsg('Could not remove.','error');}
 }
 
 function showMsg(text,type){
@@ -558,11 +595,12 @@ function renderSchedule(){
   });
 }
 
-function schedAdminCancel(key){
-  const uid=bookings[key];const u=users.find(x=>x.id===uid);
-  delete bookings[key];
-  if(u)addNotification('book',`Admin removed booking for ${u.fname} ${u.lname}.`);
-  renderSchedule();
+async function schedAdminCancel(key){
+  const[date,h]=key.split('_');
+  try{
+    await apiDelete('/bookings/'+date+'/'+h);
+    delete bookings[key];renderSchedule();
+  }catch(e){showToast('Could not remove.');}
 }
 
 // ── my bookings ───────────────────────────────────────────
@@ -579,7 +617,13 @@ function renderMyBookings(){
     </div>`;
   }).join('');
 }
-function cancelFromMy(key){delete bookings[key];showToast('Booking cancelled.');renderMyBookings();}
+async function cancelFromMy(key){
+  const[date,h]=key.split('_');
+  try{
+    await apiDelete('/bookings/'+date+'/'+h);
+    delete bookings[key];showToast('Booking cancelled.');renderMyBookings();
+  }catch(e){showToast('Could not cancel.');}
+}
 
 // ── tenants ───────────────────────────────────────────────
 function renderTenants(){
@@ -603,8 +647,22 @@ function renderTenants(){
     </div>`;
   }).join('');
 }
-function revokeUser(id){users=users.map(u=>u.id===id?{...u,approved:false}:u);renderTenants();}
-
+async function revokeUser(id){
+  try{ await apiPost('/users/'+id+'/approve',{approved:false}); users=users.map(u=>u.id===id?{...u,approved:false}:u); renderTenants(); }catch(e){}
+}
+async function approveUser(id){
+  try{ await apiPost('/users/'+id+'/approve',{approved:true}); users=users.map(u=>u.id===id?{...u,approved:true}:u); renderApprovals(); showToast('Tenant approved.'); }catch(e){}
+}
+async function denyUser(id){
+  try{ await apiDelete('/users/'+id); users=users.filter(u=>u.id!==id); renderApprovals(); showToast('Registration denied.'); }catch(e){}
+}
+async function revokeUser2(id){
+  try{ await apiPost('/users/'+id+'/approve',{approved:false}); users=users.map(u=>u.id===id?{...u,approved:false}:u); renderApprovals(); }catch(e){}
+}
+async function markAllRead(){
+  try{ await fetch(API+'/notifications/read-all',{method:'PATCH',credentials:'include'}); }catch(e){}
+  notifications.forEach(n=>n.read=true);updateNotifBadge();renderNotifications();
+}
 // ── stats ─────────────────────────────────────────────────
 function renderStats(){
   const all=Object.entries(bookings);
