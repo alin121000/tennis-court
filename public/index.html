@@ -117,21 +117,23 @@ input:focus{outline:none;border-color:#378ADD;}
     <input type="number" id="reg-apt" placeholder="12" min="1" step="1" inputmode="numeric"/>
     <label>Phone number</label>
     <input type="tel" id="reg-phone" placeholder="050 1234567" oninput="fmtPhone(this)" autocomplete="tel"/>
+    <label>Email address (for verification)</label>
+    <input type="email" id="reg-email" placeholder="dana@email.com" autocomplete="email"/>
     <div id="reg1-msg"></div>
-    <button style="margin-top:14px;width:100%;padding:10px;border-radius:8px;border:none;background:#1a1a1a;color:#fff;font-size:15px;cursor:pointer;" onclick="goRegStep2()">Continue — verify phone</button>
+    <button style="margin-top:14px;width:100%;padding:10px;border-radius:8px;border:none;background:#1a1a1a;color:#fff;font-size:15px;cursor:pointer;" onclick="goRegStep2()">Continue — verify email</button>
   </div>
 </div>
 
-<!-- REG STEP 2: SMS -->
+<!-- REG STEP 2: email OTP -->
 <div id="screen-reg2" class="screen">
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:1.25rem;margin-top:1rem;">
     <button onclick="showScreen('screen-reg1')" style="background:none;border:none;cursor:pointer;font-size:20px;color:#888;">&#8592;</button>
-    <p style="font-size:17px;font-weight:500;">Verify phone — 2 of 3</p>
+    <p style="font-size:17px;font-weight:500;">Verify email — 2 of 3</p>
   </div>
   <div class="card">
-    <p style="font-size:13px;color:#666;margin-bottom:10px;">We sent a code to <strong id="sms-target"></strong></p>
+    <p style="font-size:13px;color:#666;margin-bottom:10px;">We sent a 4-digit code to <strong id="sms-target"></strong></p>
     <div class="sms-box" id="sms-box-wrap">
-      <strong>📱 SMS sent</strong><br>
+      <strong>📧 Check your email</strong><br>
       <span id="sms-preview" style="color:#555;"></span>
     </div>
     <label>Enter the 4-digit code</label>
@@ -417,22 +419,23 @@ async function goRegStep2(){
   const lname=document.getElementById('reg-lname').value.trim();
   const apt=document.getElementById('reg-apt').value.trim();
   const phone=document.getElementById('reg-phone').value.trim();
+  const email=document.getElementById('reg-email').value.trim();
   const msg=document.getElementById('reg1-msg');
-  if(!fname||!lname||!apt||!phone){msg.innerHTML='<div class="msg msg-error">Please fill in all fields.</div>';return;}
+  if(!fname||!lname||!apt||!phone||!email){msg.innerHTML='<div class="msg msg-error">Please fill in all fields.</div>';return;}
   if(!/^\d+$/.test(apt)){msg.innerHTML='<div class="msg msg-error">Apartment must be a number.</div>';return;}
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){msg.innerHTML='<div class="msg msg-error">Please enter a valid email address.</div>';return;}
   try{
-    const res=await apiPost('/auth/send-sms',{phone});
-    pendingReg={fname,lname,apt,phone};
-    document.getElementById('sms-target').textContent=phone;
-    // show dev code if returned (non-production)
-    const preview=res.devCode?`Your court booking verification code: ${res.devCode}. Valid for 10 minutes.`:'Code sent! Check your SMS.';
+    const res=await apiPost('/auth/send-otp',{email,phone});
+    pendingReg={fname,lname,apt,phone,email};
+    document.getElementById('sms-target').textContent=email;
+    const preview=res.devCode?`Dev mode — your code is: ${res.devCode}`:'Check your inbox for the verification code.';
     document.getElementById('sms-preview').textContent=preview;
     document.getElementById('reg-code').value='';
     document.getElementById('reg2-msg').innerHTML='';
     msg.innerHTML='';
     showScreen('screen-reg2');
   }catch(e){
-    msg.innerHTML='<div class="msg msg-error">'+(e.message.includes('already')?'This phone is already registered.':'Error sending SMS. Try again.')+'</div>';
+    msg.innerHTML='<div class="msg msg-error">'+(e.message.includes('already')?'This phone is already registered.':'Error sending email. Try again.')+'</div>';
   }
 }
 
@@ -440,7 +443,7 @@ async function verifyCode(){
   const code=document.getElementById('reg-code').value.trim();
   const msg=document.getElementById('reg2-msg');
   try{
-    await apiPost('/auth/verify-sms',{phone:pendingReg.phone,code});
+    await apiPost('/auth/verify-otp',{email:pendingReg.email,code});
     document.getElementById('reg-pin').value='';
     document.getElementById('reg-pin2').value='';
     document.getElementById('reg3-msg').innerHTML='';
@@ -456,7 +459,6 @@ async function submitReg(){
   const msg=document.getElementById('reg3-msg');
   if(pin.length!==4||!/^\d+$/.test(pin)){msg.innerHTML='<div class="msg msg-error">PIN must be exactly 4 digits.</div>';return;}
   if(pin!==pin2){msg.innerHTML='<div class="msg msg-error">PINs don\'t match.</div>';return;}
-  // get the verified code from the sms-preview (dev mode) or re-ask
   const code=document.getElementById('reg-code').value.trim();
   try{
     const nu=await apiPost('/auth/register',{...pendingReg,pin,code});

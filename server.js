@@ -2,7 +2,6 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const session = require('express-session');
 const { Pool } = require('pg');
-const twilio = require('twilio');
 const path = require('path');
 require('dotenv').config();
 
@@ -13,10 +12,9 @@ const MAX_ADVANCE_DAYS = 3;
 // ── database ──────────────────────────────────────────────
 const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
 
-// ── twilio ────────────────────────────────────────────────
-const twilioClient = process.env.TWILIO_ACCOUNT_SID
-  ? twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
-  : null;
+// ── resend (email OTP) ────────────────────────────────────
+const RESEND_API_KEY = process.env.RESEND_API_KEY;
+const FROM_EMAIL = process.env.FROM_EMAIL || 'onboarding@resend.dev';
 
 // ── middleware ────────────────────────────────────────────
 app.use(express.json());
@@ -52,24 +50,27 @@ function isWithinAdvanceLimit(dateStr) {
   return diffDays >= 0 && diffDays <= MAX_ADVANCE_DAYS;
 }
 
-// ── SMS ───────────────────────────────────────────────────
-async function sendSMS(phone, code) {
-  if (!twilioClient) {
-    console.log(`[DEV] SMS to ${phone}: Your court booking code is ${code}`);
+// ── email OTP via Resend ──────────────────────────────────
+async function sendEmail(to, code) {
+  if (!RESEND_API_KEY) {
+    console.log(`[DEV] Email to ${to}: Your court booking code is ${code}`);
     return;
   }
-  // Normalise Israeli number: "050 1234567" -> "+972501234567"
-  const digits = phone.replace(/\D/g, '');
-  const e164 = digits.startsWith('0') ? '+972' + digits.slice(1) : '+' + digits;
-  await twilioClient.messages.create({
-    body: `Your court booking verification code is: ${code}. Valid for 10 minutes.`,
-    from: process.env.TWILIO_PHONE_NUMBER,
-    to: e164
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      from: FROM_EMAIL,
+      to,
+      subject: 'Your court booking verification code',
+      html: `<p>Your verification code is: <strong style="font-size:24px;letter-spacing:4px;">${code}</strong></p><p>Valid for 10 minutes.</p>`
+    })
   });
+  if (!res.ok) { const e = await res.text(); throw new Error('Resend error: ' + e); }
 }
 
-// ── in-memory SMS code store (use Redis in production) ────
-const smsCodes = new Map(); // phone -> { code, expires }
+// ── OTP code store ────────────────────────────────────────
+const otpCodes = new Map(); // email -> { code, expires }
 
 // ── routes: auth ──────────────────────────────────────────
 
@@ -126,21 +127,21 @@ app.get('/api/auth/me', async (req, res) => {
 
 // ── routes: registration ──────────────────────────────────
 
-// Step 1: Send SMS
-app.post('/api/auth/send-sms', async (req, res) => {
-  const { phone } = req.body;
+// Step 1: Send email OTP
+app.post('/api/auth/send-otp', async (req, res) => {
+  const { email, phone } = req.body;
   const existing = await pool.query('SELECT id FROM users WHERE phone=$1', [phone]);
   if (existing.rows.length) return res.status(409).json({ error: 'Phone already registered' });
   const code = Math.floor(1000 + Math.random() * 9000).toString();
-  smsCodes.set(phone, { code, expires: Date.now() + 10 * 60 * 1000 });
-  try { await sendSMS(phone, code); } catch(e) { console.error('SMS error:', e.message); }
-  res.json({ ok: true, devCode: process.env.NODE_ENV !== 'production' ? code : undefined });
+  otpCodes.set(email, { code, expires: Date.now() + 10 * 60 * 1000 });
+  try { await sendEmail(email, code); } catch(e) { console.error('Email error:', e.message); }
+  res.json({ ok: true, devCode: !RESEND_API_KEY ? code : undefined });
 });
 
-// Step 2: Verify SMS code
-app.post('/api/auth/verify-sms', (req, res) => {
-  const { phone, code } = req.body;
-  const entry = smsCodes.get(phone);
+// Step 2: Verify OTP
+app.post('/api/auth/verify-otp', (req, res) => {
+  const { email, code } = req.body;
+  const entry = otpCodes.get(email);
   if (!entry || entry.code !== code || Date.now() > entry.expires)
     return res.status(400).json({ error: 'Invalid or expired code' });
   res.json({ ok: true });
@@ -148,9 +149,8 @@ app.post('/api/auth/verify-sms', (req, res) => {
 
 // Step 3: Complete registration
 app.post('/api/auth/register', async (req, res) => {
-  const { fname, lname, apt, phone, pin, code } = req.body;
-  // Re-verify code
-  const entry = smsCodes.get(phone);
+  const { fname, lname, apt, phone, email, pin, code } = req.body;
+  const entry = otpCodes.get(email);
   if (!entry || entry.code !== code || Date.now() > entry.expires)
     return res.status(400).json({ error: 'Code expired. Please restart registration.' });
   if (!/^\d{4}$/.test(pin)) return res.status(400).json({ error: 'PIN must be 4 digits' });
@@ -161,8 +161,7 @@ app.post('/api/auth/register', async (req, res) => {
     'INSERT INTO users (fname,lname,apt,phone,pin_hash,is_admin,approved) VALUES ($1,$2,$3,$4,$5,false,false) RETURNING id,fname,lname,apt,phone',
     [fname, lname, apt, phone, pinHash]
   );
-  smsCodes.delete(phone);
-  // Notify admin (could also send push/email here)
+  otpCodes.delete(email);
   await pool.query(
     'INSERT INTO notifications (type,text,target_user_id) VALUES ($1,$2,$3)',
     ['reg', `${fname} ${lname} (Apt ${apt}) submitted a registration request.`, rows[0].id]
