@@ -6,54 +6,54 @@
 <title>Court Booking</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f3;color:#1a1a1a;min-height:100vh;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f3;color:#1a1a1a;min-height:100vh;font-size:16px;}
 .screen{display:none;padding:1.25rem 1rem;max-width:520px;margin:0 auto;}
 .screen.active{display:block;}
 .card{background:#fff;border:0.5px solid rgba(0,0,0,0.1);border-radius:12px;padding:1.25rem;margin-bottom:1rem;}
-.badge{display:inline-block;font-size:11px;padding:3px 8px;border-radius:6px;font-weight:500;}
+.badge{display:inline-block;font-size:12px;padding:4px 10px;border-radius:6px;font-weight:500;}
 .badge-pending{background:#FAEEDA;color:#854F0B;}
 .badge-approved{background:#EAF3DE;color:#3B6D11;}
 .badge-booked{background:#FCEBEB;color:#A32D2D;}
 .badge-mine{background:#EAF3DE;color:#0F6E56;}
 .badge-free{background:#F1EFE8;color:#5F5E5A;}
 .badge-disabled{background:#F1EFE8;color:#888;}
-.slot-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:0.5px solid rgba(0,0,0,0.07);}
+.slot-row{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:0.5px solid rgba(0,0,0,0.07);}
 .slot-row:last-child{border-bottom:none;}
-.slot-time{font-size:12px;font-weight:500;min-width:100px;}
+.slot-time{font-size:14px;font-weight:500;min-width:110px;}
 .top-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;}
 .tab-bar{display:flex;gap:5px;margin-bottom:1.25rem;overflow-x:auto;padding-bottom:2px;}
-.tab{flex:1;padding:7px 4px;font-size:12px;border:0.5px solid rgba(0,0,0,0.15);border-radius:8px;background:transparent;cursor:pointer;color:#666;white-space:nowrap;}
+.tab{flex:1;padding:8px 4px;font-size:13px;border:0.5px solid rgba(0,0,0,0.15);border-radius:8px;background:transparent;cursor:pointer;color:#666;white-space:nowrap;}
 .tab.active{background:#eee;color:#111;font-weight:500;}
 .date-nav{display:flex;align-items:center;gap:8px;margin-bottom:1rem;}
-.date-nav button{background:none;border:0.5px solid rgba(0,0,0,0.15);border-radius:8px;padding:4px 10px;cursor:pointer;font-size:14px;color:#1a1a1a;}
+.date-nav button{background:none;border:0.5px solid rgba(0,0,0,0.15);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:16px;color:#1a1a1a;}
 .date-nav button:disabled{opacity:0.3;cursor:default;}
-.date-label{font-size:13px;font-weight:500;flex:1;text-align:center;}
-.book-btn{font-size:12px;padding:4px 10px;border-radius:8px;border:0.5px solid rgba(0,0,0,0.15);background:transparent;cursor:pointer;}
+.date-label{font-size:15px;font-weight:500;flex:1;text-align:center;}
+.book-btn{font-size:13px;padding:6px 14px;border-radius:8px;border:0.5px solid rgba(0,0,0,0.15);background:transparent;cursor:pointer;}
 .book-btn:hover{background:#f0f0f0;}
-.cancel-btn{font-size:12px;padding:4px 8px;border-radius:8px;border:0.5px solid rgba(240,149,149,0.5);background:transparent;cursor:pointer;color:#A32D2D;}
+.cancel-btn{font-size:13px;padding:5px 10px;border-radius:8px;border:0.5px solid rgba(240,149,149,0.5);background:transparent;cursor:pointer;color:#A32D2D;}
 .cancel-btn:hover{background:#FCEBEB;}
-.approve-btn{font-size:12px;padding:4px 10px;border-radius:8px;border:none;background:#EAF3DE;cursor:pointer;color:#3B6D11;}
-.deny-btn{font-size:12px;padding:4px 10px;border-radius:8px;border:none;background:#FCEBEB;cursor:pointer;color:#A32D2D;}
-.msg{font-size:13px;padding:8px 12px;border-radius:8px;margin-bottom:10px;}
+.approve-btn{font-size:13px;padding:5px 12px;border-radius:8px;border:none;background:#EAF3DE;cursor:pointer;color:#3B6D11;}
+.deny-btn{font-size:13px;padding:5px 12px;border-radius:8px;border:none;background:#FCEBEB;cursor:pointer;color:#A32D2D;}
+.msg{font-size:14px;padding:10px 14px;border-radius:8px;margin-bottom:10px;}
 .msg-success{background:#EAF3DE;color:#3B6D11;}
 .msg-error{background:#FCEBEB;color:#A32D2D;}
 .msg-info{background:#E6F1FB;color:#185FA5;}
 .msg-warn{background:#FAEEDA;color:#854F0B;}
-label{font-size:13px;color:#555;display:block;margin-bottom:4px;margin-top:12px;}
-input{width:100%;padding:9px 12px;border:0.5px solid rgba(0,0,0,0.2);border-radius:8px;font-size:15px;background:#fff;color:#1a1a1a;}
+label{font-size:14px;color:#555;display:block;margin-bottom:4px;margin-top:12px;}
+input{width:100%;padding:10px 14px;border:0.5px solid rgba(0,0,0,0.2);border-radius:8px;font-size:16px;background:#fff;color:#1a1a1a;}
 input:focus{outline:none;border-color:#378ADD;}
-.avatar{width:30px;height:30px;border-radius:50%;background:#E6F1FB;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;color:#185FA5;flex-shrink:0;}
-.sms-box{background:#F1EFE8;border-radius:8px;padding:10px 12px;margin:12px 0;font-size:13px;line-height:1.5;}
+.avatar{width:32px;height:32px;border-radius:50%;background:#E6F1FB;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;color:#185FA5;flex-shrink:0;}
+.sms-box{background:#F1EFE8;border-radius:8px;padding:12px 14px;margin:12px 0;font-size:14px;line-height:1.5;}
 .stat-bar-wrap{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
 .stat-bar-bg{flex:1;height:10px;background:#eee;border-radius:5px;overflow:hidden;}
 .stat-bar-fill{height:10px;border-radius:5px;background:#378ADD;}
-.section-title{font-size:14px;font-weight:500;margin-bottom:10px;}
+.section-title{font-size:15px;font-weight:500;margin-bottom:10px;}
 .metric-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:1rem;}
 .metric-card{background:#f0f0ee;border-radius:8px;padding:10px 12px;text-align:center;}
-.metric-val{font-size:20px;font-weight:500;}
-.metric-lbl{font-size:11px;color:#666;margin-top:2px;}
+.metric-val{font-size:22px;font-weight:500;}
+.metric-lbl{font-size:12px;color:#666;margin-top:2px;}
 .notif-dot{width:8px;height:8px;border-radius:50%;background:#E24B4A;display:inline-block;margin-left:4px;vertical-align:middle;}
-.notif-item{display:flex;align-items:flex-start;gap:10px;padding:10px 8px;border-bottom:0.5px solid rgba(0,0,0,0.07);border-radius:8px;transition:background 0.15s;}
+.notif-item{display:flex;align-items:flex-start;gap:10px;padding:12px 8px;border-bottom:0.5px solid rgba(0,0,0,0.07);border-radius:8px;transition:background 0.15s;}
 .notif-item:last-child{border-bottom:none;}
 .notif-item.clickable{cursor:pointer;}
 .notif-item.clickable:hover{background:#f5f5f3;}
@@ -342,6 +342,125 @@ let highlightUserId=null;
 let notifications=[];
 let users=[], bookings={};
 
+// ── i18n ──────────────────────────────────────────────────
+const LANGS = {
+  en: {
+    appTitle:'Court booking', appSub:'Building tennis court reservations',
+    phone:'Phone number', pin:'PIN', continue:'Continue', signIn:'Sign in',
+    newTenant:'New tenant?', register:'Register', signingInAs:'Signing in as',
+    createAccount:'Create account', step:'Step', of:'of',
+    firstName:'First name', lastName:'Last name', apt:'Apartment number',
+    email:'Email address (for verification)', continueVerify:'Continue — verify email',
+    verifyEmail:'Verify email', verifyPhone:'Verify phone',
+    weSentCode:'We sent a 4-digit code to', checkEmail:'📧 Check your email',
+    enterCode:'Enter the 4-digit code', verify:'Verify',
+    setPin:'Set your PIN', phoneVerified:'Phone verified! Choose a 4-digit PIN.',
+    choosePin:'Choose a PIN', confirmPin:'Confirm PIN',
+    submitReg:'Submit registration', regSent:'Registration sent!',
+    waitingApproval:'Waiting for manager approval.',
+    backToSignIn:'Back to sign in', waitingTitle:'Waiting for approval',
+    waitingMsg:"The building manager hasn't approved your account yet.",
+    signOut:'Sign out', book:'Book', schedule:'Schedule', myBookings:'My bookings',
+    tenants:'Tenants', stats:'Stats', approvals:'Approvals', alerts:'Alerts', profile:'Profile',
+    bookedAt:"You're booked at", onlyOne:'Only 1 booking per day.',
+    limitReached:'Limit reached', bookBtn:'Book', cancelBtn:'Cancel', removeBtn:'Remove',
+    tooFarAhead:'Too far ahead', past:'Past',
+    markAllRead:'Mark all read', tapToView:'Tap to view',
+    noAlerts:'No alerts yet.', noBookings:'No upcoming bookings.',
+    noTenants:'No approved tenants.', noPending:'No pending registrations.',
+    totalBookings:'Total bookings', activeTeants:'Active tenants', pending:'Pending',
+    rushHours:'Rush hours', bookingsPerTenant:'Bookings per tenant', busiestDays:'Busiest days',
+    approve:'Approve', deny:'Deny', revoke:'Revoke', approved:'Approved',
+    changePin:'Change PIN', currentPin:'Current PIN', newPin:'New PIN', confirmNewPin:'Confirm new PIN',
+    updatePin:'Update PIN', pinUpdated:'PIN updated successfully!', pinIncorrect:'Current PIN is incorrect.',
+    name:'Name', apartment:'Apartment',
+  },
+  he: {
+    appTitle:'הזמנת מגרש', appSub:'הזמנות מגרש טניס בבניין',
+    phone:'מספר טלפון', pin:'קוד PIN', continue:'המשך', signIn:'כניסה',
+    newTenant:'דייר חדש?', register:'הרשמה', signingInAs:'כניסה בתור',
+    createAccount:'יצירת חשבון', step:'שלב', of:'מתוך',
+    firstName:'שם פרטי', lastName:'שם משפחה', apt:'מספר דירה',
+    email:'כתובת אימייל (לאימות)', continueVerify:'המשך — אימות אימייל',
+    verifyEmail:'אימות אימייל', verifyPhone:'אימות טלפון',
+    weSentCode:'שלחנו קוד בן 4 ספרות ל', checkEmail:'📧 בדוק את האימייל שלך',
+    enterCode:'הכנס את הקוד', verify:'אמת',
+    setPin:'הגדר PIN', phoneVerified:'הטלפון אומת! בחר קוד PIN בן 4 ספרות.',
+    choosePin:'בחר PIN', confirmPin:'אשר PIN',
+    submitReg:'שלח הרשמה', regSent:'ההרשמה נשלחה!',
+    waitingApproval:'ממתין לאישור המנהל.',
+    backToSignIn:'חזרה לכניסה', waitingTitle:'ממתין לאישור',
+    waitingMsg:'מנהל הבניין טרם אישר את חשבונך.',
+    signOut:'יציאה', book:'הזמנה', schedule:'לוח זמנים', myBookings:'ההזמנות שלי',
+    tenants:'דיירים', stats:'סטטיסטיקה', approvals:'אישורים', alerts:'התראות', profile:'פרופיל',
+    bookedAt:'הזמנת בשעה', onlyOne:'הזמנה אחת ביום בלבד.',
+    limitReached:'מכסה הושגה', bookBtn:'הזמן', cancelBtn:'בטל', removeBtn:'הסר',
+    tooFarAhead:'מוקדם מדי', past:'עבר',
+    markAllRead:'סמן הכל כנקרא', tapToView:'לחץ לצפייה',
+    noAlerts:'אין התראות.', noBookings:'אין הזמנות קרובות.',
+    noTenants:'אין דיירים מאושרים.', noPending:'אין הרשמות ממתינות.',
+    totalBookings:'סך הזמנות', activeTeants:'דיירים פעילים', pending:'ממתינים',
+    rushHours:'שעות עומס', bookingsPerTenant:'הזמנות לדייר', busiestDays:'ימים עמוסים',
+    approve:'אשר', deny:'דחה', revoke:'בטל אישור', approved:'מאושר',
+    changePin:'שינוי PIN', currentPin:'PIN נוכחי', newPin:'PIN חדש', confirmNewPin:'אשר PIN חדש',
+    updatePin:'עדכן PIN', pinUpdated:'.PIN עודכן בהצלחה', pinIncorrect:'קוד PIN שגוי.',
+    name:'שם', apartment:'דירה',
+  },
+  fr: {
+    appTitle:'Réservation de court', appSub:'Réservations du court de tennis',
+    phone:'Numéro de téléphone', pin:'Code PIN', continue:'Continuer', signIn:'Se connecter',
+    newTenant:'Nouveau locataire?', register:"S'inscrire", signingInAs:'Connexion en tant que',
+    createAccount:'Créer un compte', step:'Étape', of:'sur',
+    firstName:'Prénom', lastName:'Nom de famille', apt:"Numéro d'appartement",
+    email:'Adresse e-mail (pour vérification)', continueVerify:"Continuer — vérifier l'e-mail",
+    verifyEmail:"Vérifier l'e-mail", verifyPhone:'Vérifier le téléphone',
+    weSentCode:'Nous avons envoyé un code à', checkEmail:'📧 Vérifiez votre e-mail',
+    enterCode:'Entrez le code à 4 chiffres', verify:'Vérifier',
+    setPin:'Définir votre PIN', phoneVerified:'Téléphone vérifié! Choisissez un PIN à 4 chiffres.',
+    choosePin:'Choisir un PIN', confirmPin:'Confirmer le PIN',
+    submitReg:"Soumettre l'inscription", regSent:'Inscription envoyée!',
+    waitingApproval:"En attente d'approbation du gestionnaire.",
+    backToSignIn:'Retour à la connexion', waitingTitle:"En attente d'approbation",
+    waitingMsg:"Le gestionnaire n'a pas encore approuvé votre compte.",
+    signOut:'Se déconnecter', book:'Réserver', schedule:'Planning', myBookings:'Mes réservations',
+    tenants:'Locataires', stats:'Statistiques', approvals:'Approbations', alerts:'Alertes', profile:'Profil',
+    bookedAt:'Vous êtes réservé à', onlyOne:'1 réservation par jour maximum.',
+    limitReached:'Limite atteinte', bookBtn:'Réserver', cancelBtn:'Annuler', removeBtn:'Supprimer',
+    tooFarAhead:'Trop à l\'avance', past:'Passé',
+    markAllRead:'Tout marquer comme lu', tapToView:'Appuyer pour voir',
+    noAlerts:'Aucune alerte.', noBookings:'Aucune réservation à venir.',
+    noTenants:'Aucun locataire approuvé.', noPending:"Aucune inscription en attente.",
+    totalBookings:'Total réservations', activeTeants:'Locataires actifs', pending:'En attente',
+    rushHours:'Heures de pointe', bookingsPerTenant:'Réservations par locataire', busiestDays:'Jours les plus chargés',
+    approve:'Approuver', deny:'Refuser', revoke:"Révoquer l'accès", approved:'Approuvé',
+    changePin:'Changer le PIN', currentPin:'PIN actuel', newPin:'Nouveau PIN', confirmNewPin:'Confirmer le nouveau PIN',
+    updatePin:'Mettre à jour le PIN', pinUpdated:'PIN mis à jour avec succès!', pinIncorrect:'PIN actuel incorrect.',
+    name:'Nom', apartment:'Appartement',
+  }
+};
+
+function detectLang(){
+  const l=navigator.language||'en';
+  if(l.startsWith('he')) return 'he';
+  if(l.startsWith('fr')) return 'fr';
+  return 'en';
+}
+let lang=detectLang();
+function t(k){ return LANGS[lang][k]||LANGS.en[k]||k; }
+function applyLang(){
+  const isRTL=(lang==='he');
+  document.documentElement.lang=lang;
+  document.documentElement.dir=isRTL?'rtl':'ltr';
+  // update all static text
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const k=el.getAttribute('data-i18n');
+    el.textContent=t(k);
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el=>{
+    el.placeholder=t(el.getAttribute('data-i18n-placeholder'));
+  });
+}
+
 // ── helpers ──────────────────────────────────────────────
 function genId(){return Math.random().toString(36).slice(2,8);}
 function initials(u){return((u.fname||'')[0]+(u.lname||'')[0]).toUpperCase();}
@@ -378,10 +497,11 @@ async function apiDelete(path){
 
 // check if already logged in on page load
 (async()=>{
+  applyLang();
   try{
     const u=await apiGet('/auth/me');
     if(u&&u.id){ currentUser=u; await loadAppData(); mountApp(u); }
-  }catch(e){ /* not logged in, stay on login screen */ }
+  }catch(e){ /* not logged in */ }
 })();
 
 async function loadAppData(){
@@ -611,38 +731,41 @@ function userBookingOnDay(userId,offset){
 
 function renderSlots(){
   document.getElementById('date-label').textContent=dateLabel(currentDay);
-
-  // nav button states
   document.getElementById('day-prev-btn').disabled=(currentDay<=0&&!currentUser?.isAdmin);
   document.getElementById('day-next-btn').disabled=(currentDay>=MAX_ADVANCE_DAYS);
 
   const isFutureLocked=currentDay>MAX_ADVANCE_DAYS;
-  const futureBanner=document.getElementById('future-banner');
-  futureBanner.innerHTML='';
+  document.getElementById('future-banner').innerHTML='';
 
   const existing=userBookingOnDay(currentUser.id,currentDay);
   const banner=document.getElementById('limit-banner');
   if(existing){
     const h=parseInt(existing[0].split('_')[1]);
-    banner.innerHTML=`<div class="msg msg-info">You're booked at ${h.toString().padStart(2,'0')}:00. Only 1 booking per day.</div>`;
+    banner.innerHTML=`<div class="msg msg-info">${t('bookedAt')} ${h.toString().padStart(2,'0')}:00. ${t('onlyOne')}</div>`;
   } else banner.innerHTML='';
+
+  const nowHour=new Date().getHours();
+  const isToday=currentDay===0;
 
   const list=document.getElementById('slots-list');list.innerHTML='';
   HOURS.forEach(h=>{
+    // hide past hours for today
+    if(isToday && h<=nowHour) return;
+
     const key=dateKey(currentDay)+'_'+h;
     const bookedUid=bookings[key];
     const isMe=bookedUid===currentUser.id;
     const row=document.createElement('div');row.className='slot-row';
     let right='';
     if(isFutureLocked){
-      right=`<span style="flex:1;"></span><span class="badge badge-disabled">Too far ahead</span>`;
+      right=`<span style="flex:1;"></span><span class="badge badge-disabled">${t('tooFarAhead')}</span>`;
     } else if(bookedUid){
       right=`<span class="badge ${isMe?'badge-mine':'badge-booked'}" style="flex:1;">${isMe?'You':userName(bookedUid)}</span>`;
-      if(isMe) right+=`<button class="cancel-btn" onclick="cancelSlot('${key}')">Cancel</button>`;
-      if(currentUser.isAdmin&&!isMe) right+=`<button class="cancel-btn" onclick="adminCancelBook('${key}')">Remove</button>`;
+      if(isMe) right+=`<button class="cancel-btn" onclick="cancelSlot('${key}')">${t('cancelBtn')}</button>`;
+      if(currentUser.isAdmin&&!isMe) right+=`<button class="cancel-btn" onclick="adminCancelBook('${key}')">${t('removeBtn')}</button>`;
     } else {
-      if(existing) right=`<span style="font-size:12px;color:#999;flex:1;">Limit reached</span>`;
-      else right=`<span style="flex:1;"></span><button class="book-btn" onclick="bookSlot('${key}')">Book</button>`;
+      if(existing) right=`<span style="font-size:13px;color:#999;flex:1;">${t('limitReached')}</span>`;
+      else right=`<span style="flex:1;"></span><button class="book-btn" onclick="bookSlot('${key}')">${t('bookBtn')}</button>`;
     }
     row.innerHTML=`<span class="slot-time">${timeStr(h)}</span>${right}`;
     list.appendChild(row);
