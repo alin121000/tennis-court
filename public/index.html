@@ -386,17 +386,20 @@ async function apiDelete(path){
 
 async function loadAppData(){
   try{
-    // load users list (admin only, others get empty)
+    // load users list (admin only)
     if(currentUser.isAdmin){
       const u=await apiGet('/users');
       users=u.map(x=>({id:x.id,fname:x.fname,lname:x.lname,apt:x.apt,phone:x.phone,isAdmin:x.is_admin,approved:x.approved}));
       const n=await apiGet('/notifications');
       notifications=n.map(x=>({id:x.id,type:x.type,text:x.text,time:new Date(x.created_at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}),read:x.read,targetUserId:x.target_user_id,targetDate:x.target_date,targetHour:x.target_hour}));
     }
-    // load today's bookings
-    const b=await apiGet('/bookings');
+    // load all bookings (no date filter — get everything)
+    const b=await apiGet('/bookings/all');
     bookings={};
-    b.forEach(r=>{ bookings[r.date+'_'+r.hour]=r.user_id; if(!users.find(u=>u.id===r.user_id)) users.push({id:r.user_id,fname:r.fname,lname:r.lname}); });
+    b.forEach(r=>{
+      bookings[r.date+'_'+r.hour]=r.user_id;
+      if(!users.find(u=>u.id===r.user_id)) users.push({id:r.user_id,fname:r.fname,lname:r.lname});
+    });
   }catch(e){ console.error('loadAppData error',e); }
 }
 
@@ -588,13 +591,18 @@ async function changePin(){
   }
 }
 
-function changeDay(d){
+async function changeDay(d){
   const next=currentDay+d;
   if(next<-30||next>MAX_ADVANCE_DAYS) return;
   currentDay=next;
+  await loadAppData();
   renderSlots();
 }
-function changeSchedDay(d){schedDay+=d;renderSchedule();}
+async function changeSchedDay(d){
+  schedDay+=d;
+  await loadAppData();
+  renderSchedule();
+}
 
 // ── booking ───────────────────────────────────────────────
 function userBookingOnDay(userId,offset){
