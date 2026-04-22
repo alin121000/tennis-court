@@ -151,13 +151,18 @@ app.get('/api/auth/me', async (req, res) => {
 
 // Step 1: Send email OTP
 app.post('/api/auth/send-otp', async (req, res) => {
-  const { email, phone } = req.body;
-  const existing = await pool.query('SELECT id FROM users WHERE phone=$1', [phone]);
-  if (existing.rows.length) return res.status(409).json({ error: 'Phone already registered' });
-  const code = Math.floor(1000 + Math.random() * 9000).toString();
-  otpCodes.set(email, { code, expires: Date.now() + 10 * 60 * 1000 });
-  try { await sendEmail(email, code); } catch(e) { console.error('Email error:', e.message); }
-  res.json({ ok: true, devCode: !RESEND_API_KEY ? code : undefined });
+  try {
+    const { email, phone } = req.body;
+    const existing = await pool.query('SELECT id FROM users WHERE phone=$1', [phone]);
+    if (existing.rows.length) return res.status(409).json({ error: 'Phone already registered' });
+    const code = Math.floor(1000 + Math.random() * 9000).toString();
+    otpCodes.set(email, { code, expires: Date.now() + 10 * 60 * 1000 });
+    await sendEmail(email, code);
+    res.json({ ok: true });
+  } catch(e) {
+    console.error('send-otp error:', e.message);
+    res.status(500).json({ error: 'Failed to send email: ' + e.message });
+  }
 });
 
 // Step 2: Verify OTP
