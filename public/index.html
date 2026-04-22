@@ -496,7 +496,8 @@ function applyLang(){
   const isRTL=(lang==='he');
   document.documentElement.lang=lang;
   document.documentElement.dir=isRTL?'rtl':'ltr';
-  // update login screen static text
+
+  // static text map: elementId -> translation key
   const map={
     'login-title':'appTitle','login-sub':'appSub',
     'lbl-phone':'phone','btn-continue':'continue',
@@ -506,11 +507,47 @@ function applyLang(){
   Object.entries(map).forEach(([id,key])=>{
     const el=document.getElementById(id);if(el)el.textContent=t(key);
   });
+
+  // translate all tab buttons
+  const tabMap={
+    'book':'book','schedule':'schedule','my':'myBookings',
+    'tenants':'tenants','stats':'stats','approvals':'approvals',
+    'alerts':'alerts','profile':'profile'
+  };
+  document.querySelectorAll('#admin-tabs .tab, #user-tabs .tab').forEach(btn=>{
+    const txt=btn.textContent.trim().replace(/[🔴●]/g,'').trim().toLowerCase();
+    for(const [key,tkey] of Object.entries(tabMap)){
+      // match by first 4 chars of English or Hebrew or French
+      const enMatch=LANGS.en[tkey]?.toLowerCase().startsWith(txt.slice(0,4));
+      const heMatch=LANGS.he[tkey]?.startsWith(txt.slice(0,2));
+      const frMatch=LANGS.fr[tkey]?.toLowerCase().startsWith(txt.slice(0,4));
+      if(enMatch||heMatch||frMatch){
+        // preserve notification dot if present
+        const dot=btn.querySelector('span.notif-dot');
+        btn.textContent=t(tkey);
+        if(dot)btn.appendChild(dot);
+        break;
+      }
+    }
+  });
+
   // highlight active lang in dropdown
   document.querySelectorAll('.lang-option').forEach(el=>{
-    const txt=el.textContent;
-    el.classList.toggle('active',(lang==='he'&&txt.includes('עברית'))||(lang==='fr'&&txt.includes('Français'))||(lang==='en'&&txt.includes('English')));
+    el.classList.toggle('active',
+      (lang==='he'&&el.textContent.includes('עברית'))||
+      (lang==='fr'&&el.textContent.includes('Français'))||
+      (lang==='en'&&el.textContent.includes('English'))
+    );
   });
+
+  // re-render current visible tab if app is active
+  if(currentUser){
+    const activeTab=['book','schedule','my','tenants','stats','approvals','notifications','profile']
+      .find(t=>document.getElementById('tab-'+t)?.style.display!=='none');
+    if(activeTab==='book') renderSlots();
+    if(activeTab==='my') renderMyBookings();
+    if(activeTab==='schedule') renderSchedule();
+  }
 }
 
 // ── helpers ──────────────────────────────────────────────
@@ -558,21 +595,27 @@ async function apiDelete(path){
 
 async function loadAppData(){
   try{
-    // load users list for everyone (needed to show names on booked slots)
-    const u=await apiGet('/users');
-    users=u.map(x=>({id:x.id,fname:x.fname,lname:x.lname,apt:x.apt,phone:x.phone,isAdmin:x.is_admin,approved:x.approved}));
-    if(currentUser.isAdmin){
-      const n=await apiGet('/notifications');
-      notifications=n.map(x=>({id:x.id,type:x.type,text:x.text,time:new Date(x.created_at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}),read:x.read,targetUserId:x.target_user_id,targetDate:x.target_date,targetHour:x.target_hour}));
-    }
-    // load all bookings
+    // load all bookings (works for everyone)
     const b=await apiGet('/bookings/all');
     bookings={};
     b.forEach(r=>{
       bookings[r.date+'_'+r.hour]=r.user_id;
+      // build a users list from booking data so names show for everyone
       if(!users.find(u=>u.id===r.user_id)) users.push({id:r.user_id,fname:r.fname,lname:r.lname});
     });
-  }catch(e){ console.error('loadAppData error',e); }
+    // load full users list and notifications (admin only)
+    if(currentUser.isAdmin){
+      const u=await apiGet('/users');
+      // merge — keep booking-sourced entries, add new ones
+      u.forEach(x=>{
+        const existing=users.find(u=>u.id===x.id);
+        if(existing){ Object.assign(existing,{apt:x.apt,phone:x.phone,isAdmin:x.is_admin,approved:x.approved}); }
+        else users.push({id:x.id,fname:x.fname,lname:x.lname,apt:x.apt,phone:x.phone,isAdmin:x.is_admin,approved:x.approved});
+      });
+      const n=await apiGet('/notifications');
+      notifications=n.map(x=>({id:x.id,type:x.type,text:x.text,time:new Date(x.created_at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}),read:x.read,targetUserId:x.target_user_id,targetDate:x.target_date,targetHour:x.target_hour}));
+    }
+  }catch(e){ console.error('loadAppData error',e.message); }
 }
 
 // ── notifications ─────────────────────────────────────────
@@ -861,17 +904,20 @@ function showMsg(text,type){
 function renderSchedule(){
   document.getElementById('sched-date-label').textContent=dateLabel(schedDay);
   const list=document.getElementById('sched-list');list.innerHTML='';
+  const nowHour=new Date().getHours();
+  const isToday=schedDay===0;
   HOURS.forEach(h=>{
+    if(isToday&&h<=nowHour&&!currentUser.isAdmin) return;
     const key=dateKey(schedDay)+'_'+h;
     const bookedUid=bookings[key];const isMe=bookedUid===currentUser.id;
     const row=document.createElement('div');row.className='slot-row';row.dataset.key=key;
     let right='';
     if(bookedUid){
-      right=`<span style="flex:1;font-size:13px;font-weight:500;">${isMe?'You':userName(bookedUid)}</span>
-        <span class="badge ${isMe?'badge-mine':'badge-booked'}">${isMe?'Your slot':'Booked'}</span>
-        <button class="cancel-btn" style="margin-left:6px;" onclick="schedAdminCancel('${key}')">Remove</button>`;
+      right=`<span style="flex:1;font-size:14px;font-weight:500;">${isMe?t('bookBtn'):userName(bookedUid)}</span>
+        <span class="badge ${isMe?'badge-mine':'badge-booked'}">${isMe?'✓':t('bookBtn')}</span>`;
+      if(currentUser.isAdmin) right+=`<button class="cancel-btn" style="margin-left:6px;" onclick="schedAdminCancel('${key}')">${t('removeBtn')}</button>`;
     } else {
-      right=`<span style="flex:1;font-size:13px;color:#aaa;">—</span><span class="badge badge-free">Free</span>`;
+      right=`<span style="flex:1;font-size:14px;color:#aaa;">—</span><span class="badge badge-free">Free</span>`;
     }
     row.innerHTML=`<span class="slot-time">${timeStr(h)}</span>${right}`;
     list.appendChild(row);
@@ -890,13 +936,13 @@ async function schedAdminCancel(key){
 function renderMyBookings(){
   const list=document.getElementById('my-bookings-list');
   const mine=Object.entries(bookings).filter(([k,v])=>v===currentUser.id).sort((a,b)=>a[0].localeCompare(b[0]));
-  if(!mine.length){list.innerHTML='<div class="card" style="color:#888;font-size:13px;">No upcoming bookings.</div>';return;}
+  if(!mine.length){list.innerHTML=`<div class="card" style="color:#888;font-size:14px;">${t('noBookings')}</div>`;return;}
   list.innerHTML=mine.map(([key])=>{
     const[date,hs]=key.split('_');const h=parseInt(hs);
-    const dl=new Date(date).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
+    const dl=new Date(date).toLocaleDateString(lang==='he'?'he-IL':lang==='fr'?'fr-FR':'en-GB',{weekday:'short',day:'numeric',month:'short'});
     return`<div class="card" style="display:flex;align-items:center;justify-content:space-between;">
-      <div><p style="font-size:14px;font-weight:500;">${timeStr(h)}</p><p style="font-size:12px;color:#888;">${dl}</p></div>
-      <button class="cancel-btn" onclick="cancelFromMy('${key}')">Cancel</button>
+      <div><p style="font-size:15px;font-weight:500;">${timeStr(h)}</p><p style="font-size:13px;color:#888;">${dl}</p></div>
+      <button class="cancel-btn" onclick="cancelFromMy('${key}')">${t('cancelBtn')}</button>
     </div>`;
   }).join('');
 }
