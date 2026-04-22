@@ -310,9 +310,9 @@ input:focus{outline:none;border-color:#378ADD;}
   <!-- SCHEDULE (admin) -->
   <div id="tab-schedule" style="display:none;">
     <div class="date-nav">
-      <button onclick="changeSchedDay(-1)">&#8592;</button>
+      <button id="sched-prev-btn" onclick="changeSchedDay(-1)">&#8592;</button>
       <span class="date-label" id="sched-date-label"></span>
-      <button onclick="changeSchedDay(1)">&#8594;</button>
+      <button id="sched-next-btn" onclick="changeSchedDay(1)">&#8594;</button>
     </div>
     <div class="card" style="padding:1rem;"><div id="sched-list"></div></div>
   </div>
@@ -530,6 +530,13 @@ function applyLang(){
       }
     }
   });
+
+  // update arrows for RTL
+  const arrows=getArrows();
+  const pb=document.getElementById('day-prev-btn');if(pb)pb.textContent=arrows.prev;
+  const nb=document.getElementById('day-next-btn');if(nb)nb.textContent=arrows.next;
+  const spb=document.getElementById('sched-prev-btn');if(spb)spb.textContent=arrows.prev;
+  const snb=document.getElementById('sched-next-btn');if(snb)snb.textContent=arrows.next;
 
   // highlight active lang in dropdown
   document.querySelectorAll('.lang-option').forEach(el=>{
@@ -813,6 +820,8 @@ async function changePin(){
   }
 }
 
+function getArrows(){ return lang==='he' ? {prev:'→', next:'←'} : {prev:'←', next:'→'}; }
+
 async function changeDay(d){
   const next=currentDay+d;
   if(next<-30||next>MAX_ADVANCE_DAYS) return;
@@ -833,6 +842,9 @@ function userBookingOnDay(userId,offset){
 }
 
 function renderSlots(){
+  const arrows=getArrows();
+  document.getElementById('day-prev-btn').textContent=arrows.prev;
+  document.getElementById('day-next-btn').textContent=arrows.next;
   document.getElementById('date-label').textContent=dateLabel(currentDay);
   document.getElementById('day-prev-btn').disabled=(currentDay<=0&&!currentUser?.isAdmin);
   document.getElementById('day-next-btn').disabled=(currentDay>=MAX_ADVANCE_DAYS);
@@ -910,6 +922,9 @@ function showMsg(text,type){
 
 // ── schedule ──────────────────────────────────────────────
 function renderSchedule(){
+  const arrows=getArrows();
+  document.getElementById('sched-prev-btn').textContent=arrows.prev;
+  document.getElementById('sched-next-btn').textContent=arrows.next;
   document.getElementById('sched-date-label').textContent=dateLabel(schedDay);
   const list=document.getElementById('sched-list');list.innerHTML='';
   const nowHour=new Date().getHours();
