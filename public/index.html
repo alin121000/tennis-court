@@ -19,7 +19,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .badge-disabled{background:#F1EFE8;color:#888;}
 .slot-row{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:0.5px solid rgba(0,0,0,0.07);}
 .slot-row:last-child{border-bottom:none;}
-.slot-time{font-size:14px;font-weight:500;min-width:110px;}
+.slot-time{font-size:14px;font-weight:500;min-width:110px;direction:ltr;unicode-bidi:embed;}
 .top-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;}
 .tab-bar{display:flex;gap:5px;margin-bottom:1.25rem;overflow-x:auto;padding-bottom:2px;}
 .tab{flex:1;padding:8px 4px;font-size:13px;border:0.5px solid rgba(0,0,0,0.15);border-radius:8px;background:transparent;cursor:pointer;color:#666;white-space:nowrap;}
@@ -561,7 +561,7 @@ function dateLabel(offset){
   if(offset===1) return 'Tomorrow, '+d.toLocaleDateString('en-GB',{day:'numeric',month:'short'});
   return d.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'short'});
 }
-function timeStr(h){return h.toString().padStart(2,'0')+':00 – '+(h+1).toString().padStart(2,'0')+':00';}
+function timeStr(h){return `\u202A${h.toString().padStart(2,'0')}:00 – ${(h+1).toString().padStart(2,'0')}:00\u202C`;}
 function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
 function userName(uid){const u=users.find(x=>x.id===uid);return u?u.fname+' '+u.lname:'Unknown';}
 function fmtPhone(el){let r=el.value.replace(/\D/g,'').slice(0,10);if(r.length>3)r=r.slice(0,3)+' '+r.slice(3);el.value=r;}
@@ -595,21 +595,28 @@ async function apiDelete(path){
 
 async function loadAppData(){
   try{
-    // load all bookings (works for everyone)
+    // always make sure current user is in the users list
+    if(currentUser && !users.find(u=>u.id===currentUser.id)){
+      users.push({id:currentUser.id,fname:currentUser.fname,lname:currentUser.lname,apt:currentUser.apt,phone:currentUser.phone,isAdmin:currentUser.isAdmin,approved:true});
+    }
+    // load all bookings
     const b=await apiGet('/bookings/all');
     bookings={};
     b.forEach(r=>{
-      bookings[r.date+'_'+r.hour]=r.user_id;
-      // build a users list from booking data so names show for everyone
-      if(!users.find(u=>u.id===r.user_id)) users.push({id:r.user_id,fname:r.fname,lname:r.lname});
+    const dateStr=r.date.slice(0,10);
+      const hourInt=parseInt(r.hour);
+      bookings[dateStr+'_'+hourInt]=r.user_id;
+      if(!users.find(u=>u.id===r.user_id)){
+        users.push({id:r.user_id,fname:r.fname,lname:r.lname});
+      }
     });
+    console.log('[loadAppData] loaded',Object.keys(bookings).length,'bookings, users:',users.length);
     // load full users list and notifications (admin only)
     if(currentUser.isAdmin){
       const u=await apiGet('/users');
-      // merge — keep booking-sourced entries, add new ones
       u.forEach(x=>{
-        const existing=users.find(u=>u.id===x.id);
-        if(existing){ Object.assign(existing,{apt:x.apt,phone:x.phone,isAdmin:x.is_admin,approved:x.approved}); }
+        const ex=users.find(u=>u.id===x.id);
+        if(ex){ Object.assign(ex,{apt:x.apt,phone:x.phone,isAdmin:x.is_admin,approved:x.approved}); }
         else users.push({id:x.id,fname:x.fname,lname:x.lname,apt:x.apt,phone:x.phone,isAdmin:x.is_admin,approved:x.approved});
       });
       const n=await apiGet('/notifications');
@@ -821,7 +828,8 @@ async function changeSchedDay(d){
 
 // ── booking ───────────────────────────────────────────────
 function userBookingOnDay(userId,offset){
-  return Object.entries(bookings).find(([k,v])=>v===userId&&k.startsWith(dateKey(offset)));
+  const dk=dateKey(offset);
+  return Object.entries(bookings).find(([k,v])=>v===userId&&k.startsWith(dk+'_'));
 }
 
 function renderSlots(){
