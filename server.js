@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const session = require('express-session');
 const pgSession = require('connect-pg-simple')(session);
 const { Pool } = require('pg');
+const nodemailer = require('nodemailer');
 const path = require('path');
 require('dotenv').config();
 
@@ -13,9 +14,14 @@ const MAX_ADVANCE_DAYS = 3;
 // ── database ──────────────────────────────────────────────
 const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
 
-// ── resend (email OTP) ────────────────────────────────────
-const RESEND_API_KEY = process.env.RESEND_API_KEY;
-const FROM_EMAIL = process.env.FROM_EMAIL || 'onboarding@resend.dev';
+// ── gmail mailer ──────────────────────────────────────────
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_PASS
+  }
+});
 
 // ── middleware ────────────────────────────────────────────
 app.use(express.json());
@@ -52,23 +58,24 @@ function isWithinAdvanceLimit(dateStr) {
   return diffDays >= 0 && diffDays <= MAX_ADVANCE_DAYS;
 }
 
-// ── email OTP via Resend ──────────────────────────────────
+// ── send email OTP ────────────────────────────────────────
 async function sendEmail(to, code) {
-  if (!RESEND_API_KEY) {
-    console.log(`[DEV] Email to ${to}: Your court booking code is ${code}`);
+  if (!process.env.GMAIL_USER || !process.env.GMAIL_PASS) {
+    console.log(`[DEV] Email to ${to}: code is ${code}`);
     return;
   }
-  const res = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      from: FROM_EMAIL,
-      to,
-      subject: 'Your court booking verification code',
-      html: `<p>Your verification code is: <strong style="font-size:24px;letter-spacing:4px;">${code}</strong></p><p>Valid for 10 minutes.</p>`
-    })
+  await transporter.sendMail({
+    from: `"Court Booking" <${process.env.GMAIL_USER}>`,
+    to,
+    subject: 'Your court booking verification code',
+    html: `
+      <div style="font-family:sans-serif;max-width:400px;margin:0 auto;padding:24px;">
+        <h2 style="margin-bottom:8px;">Court Booking</h2>
+        <p style="color:#555;margin-bottom:24px;">Your verification code is:</p>
+        <div style="font-size:36px;font-weight:600;letter-spacing:10px;text-align:center;padding:20px;background:#f5f5f3;border-radius:8px;">${code}</div>
+        <p style="color:#888;font-size:13px;margin-top:16px;">Valid for 10 minutes. If you didn't request this, ignore this email.</p>
+      </div>`
   });
-  if (!res.ok) { const e = await res.text(); throw new Error('Resend error: ' + e); }
 }
 
 // ── OTP code store ────────────────────────────────────────
