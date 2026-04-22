@@ -229,19 +229,19 @@ input:focus{outline:none;border-color:#378ADD;}
   </div>
 
   <div class="tab-bar" id="user-tabs">
-    <button class="tab active" onclick="showTab('book')">Book</button>
-    <button class="tab" onclick="showTab('my')">My bookings</button>
-    <button class="tab" onclick="showTab('profile')">Profile</button>
+    <button class="tab active" data-tab="book" onclick="showTab('book')">Book</button>
+    <button class="tab" data-tab="my" onclick="showTab('my')">My bookings</button>
+    <button class="tab" data-tab="profile" onclick="showTab('profile')">Profile</button>
   </div>
   <div class="tab-bar" id="admin-tabs" style="display:none;">
-    <button class="tab active" onclick="showTab('book')">Book</button>
-    <button class="tab" onclick="showTab('schedule')">Schedule</button>
-    <button class="tab" onclick="showTab('my')">My bookings</button>
-    <button class="tab" onclick="showTab('tenants')">Tenants</button>
-    <button class="tab" onclick="showTab('stats')">Stats</button>
-    <button class="tab" onclick="showTab('approvals')">Approvals</button>
-    <button class="tab" id="notif-tab" onclick="showTab('notifications')">Alerts <span id="notif-tab-dot" style="display:none;" class="notif-dot"></span></button>
-    <button class="tab" onclick="showTab('profile')">Profile</button>
+    <button class="tab active" data-tab="book" onclick="showTab('book')">Book</button>
+    <button class="tab" data-tab="schedule" onclick="showTab('schedule')">Schedule</button>
+    <button class="tab" data-tab="my" onclick="showTab('my')">My bookings</button>
+    <button class="tab" data-tab="tenants" onclick="showTab('tenants')">Tenants</button>
+    <button class="tab" data-tab="stats" onclick="showTab('stats')">Stats</button>
+    <button class="tab" data-tab="approvals" onclick="showTab('approvals')">Approvals</button>
+    <button class="tab" data-tab="notifications" id="notif-tab" onclick="showTab('notifications')">Alerts <span id="notif-tab-dot" style="display:none;" class="notif-dot"></span></button>
+    <button class="tab" data-tab="profile" onclick="showTab('profile')">Profile</button>
   </div>
 
   <!-- PROFILE (all users) -->
@@ -334,9 +334,9 @@ input:focus{outline:none;border-color:#378ADD;}
 
   <!-- APPROVALS (admin) -->
   <div id="tab-approvals" style="display:none;">
-    <div class="section-title">Pending registrations</div>
+    <div class="section-title" id="lbl-pending-reg">Pending registrations</div>
     <div id="admin-pending"></div>
-    <div class="section-title" style="margin-top:1rem;">Approved tenants</div>
+    <div class="section-title" id="lbl-approved-tenants" style="margin-top:1rem;">Approved tenants</div>
     <div id="admin-approved"></div>
   </div>
 
@@ -344,9 +344,9 @@ input:focus{outline:none;border-color:#378ADD;}
   <div id="tab-notifications" style="display:none;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
       <div class="section-title" style="margin-bottom:0;">Alerts</div>
-      <button onclick="markAllRead()" style="font-size:12px;padding:4px 10px;background:none;border:0.5px solid rgba(0,0,0,0.15);border-radius:8px;cursor:pointer;color:#666;">Mark all read</button>
+      <button id="btn-mark-all-read" onclick="markAllRead()" style="font-size:12px;padding:4px 10px;background:none;border:0.5px solid rgba(0,0,0,0.15);border-radius:8px;cursor:pointer;color:#666;">Mark all read</button>
     </div>
-    <p style="font-size:12px;color:#888;margin-bottom:10px;">Tap an alert to go to the relevant section.</p>
+    <p id="lbl-tap-alert" style="font-size:12px;color:#888;margin-bottom:10px;">Tap an alert to go to the relevant section.</p>
     <div class="card" style="padding:0.5rem 0.75rem;"><div id="notif-list"></div></div>
   </div>
 </div>
@@ -395,6 +395,10 @@ const LANGS = {
     totalBookings:'Total bookings', activeTeants:'Active tenants', pending:'Pending',
     rushHours:'Rush hours', bookingsPerTenant:'Bookings per tenant', busiestDays:'Busiest days',
     approve:'Approve', deny:'Deny', revoke:'Revoke', approved:'Approved',
+    pendingRegistrations:'Pending registrations', noPendingReg:'No pending registrations.',
+    approvedTenants:'Approved tenants', noApprovedTenants:'No approved tenants.',
+    lastBooking:'Last booking', noDataYet:'No data yet.',
+    tapAlert:'Tap an alert to go to the relevant section.',
     changePin:'Change PIN', currentPin:'Current PIN', newPin:'New PIN', confirmNewPin:'Confirm new PIN',
     updatePin:'Update PIN', pinUpdated:'PIN updated successfully!', pinIncorrect:'Current PIN is incorrect.',
     name:'Name', apartment:'Apartment',
@@ -426,6 +430,10 @@ const LANGS = {
     totalBookings:'סך הזמנות', activeTeants:'דיירים פעילים', pending:'ממתינים',
     rushHours:'שעות עומס', bookingsPerTenant:'הזמנות לדייר', busiestDays:'ימים עמוסים',
     approve:'אשר', deny:'דחה', revoke:'בטל אישור', approved:'מאושר',
+    pendingRegistrations:'הרשמות ממתינות', noPendingReg:'אין הרשמות ממתינות.',
+    approvedTenants:'דיירים מאושרים', noApprovedTenants:'אין דיירים מאושרים.',
+    lastBooking:'הזמנה אחרונה', noDataYet:'אין נתונים עדיין.',
+    tapAlert:'לחץ על התראה למעבר לחלק הרלוונטי.',
     changePin:'שינוי PIN', currentPin:'PIN נוכחי', newPin:'PIN חדש', confirmNewPin:'אשר PIN חדש',
     updatePin:'עדכן PIN', pinUpdated:'.PIN עודכן בהצלחה', pinIncorrect:'קוד PIN שגוי.',
     name:'שם', apartment:'דירה',
@@ -457,6 +465,10 @@ const LANGS = {
     totalBookings:'Total réservations', activeTeants:'Locataires actifs', pending:'En attente',
     rushHours:'Heures de pointe', bookingsPerTenant:'Réservations par locataire', busiestDays:'Jours les plus chargés',
     approve:'Approuver', deny:'Refuser', revoke:"Révoquer l'accès", approved:'Approuvé',
+    pendingRegistrations:'Inscriptions en attente', noPendingReg:"Aucune inscription en attente.",
+    approvedTenants:'Locataires approuvés', noApprovedTenants:'Aucun locataire approuvé.',
+    lastBooking:'Dernière réservation', noDataYet:'Pas encore de données.',
+    tapAlert:'Appuyez sur une alerte pour accéder à la section concernée.',
     changePin:'Changer le PIN', currentPin:'PIN actuel', newPin:'Nouveau PIN', confirmNewPin:'Confirmer le nouveau PIN',
     updatePin:'Mettre à jour le PIN', pinUpdated:'PIN mis à jour avec succès!', pinIncorrect:'PIN actuel incorrect.',
     name:'Nom', apartment:'Appartement',
@@ -509,31 +521,27 @@ function applyLang(){
     'btn-change-pin':'changePin',
     'lbl-current-pin':'currentPin','lbl-new-pin':'newPin',
     'lbl-confirm-pin':'confirmNewPin','btn-update-pin':'updatePin',
+    'lbl-pending-reg':'pendingRegistrations',
+    'lbl-approved-tenants':'approvedTenants',
+    'btn-mark-all-read':'markAllRead',
+    'lbl-tap-alert':'tapAlert',
   };
   Object.entries(map).forEach(([id,key])=>{
     const el=document.getElementById(id);if(el)el.textContent=t(key);
   });
 
-  // translate all tab buttons
+  // translate all tab buttons using data-tab attribute
   const tabMap={
     'book':'book','schedule':'schedule','my':'myBookings',
     'tenants':'tenants','stats':'stats','approvals':'approvals',
-    'alerts':'alerts','profile':'profile'
+    'notifications':'alerts','profile':'profile'
   };
   document.querySelectorAll('#admin-tabs .tab, #user-tabs .tab').forEach(btn=>{
-    const txt=btn.textContent.trim().replace(/[🔴●]/g,'').trim().toLowerCase();
-    for(const [key,tkey] of Object.entries(tabMap)){
-      // match by first 4 chars of English or Hebrew or French
-      const enMatch=LANGS.en[tkey]?.toLowerCase().startsWith(txt.slice(0,4));
-      const heMatch=LANGS.he[tkey]?.startsWith(txt.slice(0,2));
-      const frMatch=LANGS.fr[tkey]?.toLowerCase().startsWith(txt.slice(0,4));
-      if(enMatch||heMatch||frMatch){
-        // preserve notification dot if present
-        const dot=btn.querySelector('span.notif-dot');
-        btn.textContent=t(tkey);
-        if(dot)btn.appendChild(dot);
-        break;
-      }
+    const tabKey=btn.dataset.tab;
+    if(tabKey&&tabMap[tabKey]){
+      const dot=btn.querySelector('span.notif-dot');
+      btn.textContent=t(tabMap[tabKey]);
+      if(dot)btn.appendChild(dot);
     }
   });
 
@@ -558,8 +566,13 @@ function applyLang(){
     const activeTab=['book','schedule','my','tenants','stats','approvals','notifications','profile']
       .find(t=>document.getElementById('tab-'+t)?.style.display!=='none');
     if(activeTab==='book') renderSlots();
-    if(activeTab==='my') renderMyBookings();
-    if(activeTab==='schedule') renderSchedule();
+    else if(activeTab==='my') renderMyBookings();
+    else if(activeTab==='schedule') renderSchedule();
+    else if(activeTab==='tenants') renderTenants();
+    else if(activeTab==='stats') renderStats();
+    else if(activeTab==='approvals') renderApprovals();
+    else if(activeTab==='notifications') renderNotifications();
+    else if(activeTab==='profile') renderProfile();
   }
 }
 
@@ -777,9 +790,9 @@ function showTab(tab){
   ['book','schedule','my','tenants','stats','approvals','notifications','profile'].forEach(t=>{
     const el=document.getElementById('tab-'+t);if(el)el.style.display=(t===tab)?'':'none';
   });
-  document.querySelectorAll('#admin-tabs .tab,#user-tabs .tab').forEach(b=>b.classList.remove('active'));
+  // use data-tab attribute for reliable highlighting regardless of language
   document.querySelectorAll('#admin-tabs .tab,#user-tabs .tab').forEach(b=>{
-    if(b.textContent.trim().toLowerCase().startsWith(tab.slice(0,4)))b.classList.add('active');
+    b.classList.toggle('active', b.dataset.tab===tab);
   });
   if(tab==='book')renderSlots();
   if(tab==='schedule')renderSchedule();
@@ -988,7 +1001,11 @@ async function cancelFromMy(key){
   const[date,h]=key.split('_');
   try{
     await apiDelete('/bookings/'+date+'/'+h);
-    delete bookings[key];showToast('Booking cancelled.');renderMyBookings();
+    delete bookings[key];
+    showToast(t('cancelBtn'));
+    renderMyBookings();
+    // also refresh book tab if viewing same day
+    if(date===dateKey(currentDay)) renderSlots();
   }catch(e){showToast('Could not cancel.');}
 }
 
@@ -996,20 +1013,21 @@ async function cancelFromMy(key){
 function renderTenants(){
   const tenants=users.filter(u=>!u.isAdmin&&u.approved);
   const list=document.getElementById('tenants-list');
-  if(!tenants.length){list.innerHTML='<p style="font-size:13px;color:#888;">No approved tenants.</p>';return;}
+  if(!tenants.length){list.innerHTML=`<p style="font-size:14px;color:#888;">${t('noApprovedTenants')}</p>`;return;}
+  const locale=lang==='he'?'he-IL':lang==='fr'?'fr-FR':'en-GB';
   list.innerHTML=tenants.map(u=>{
     const count=Object.values(bookings).filter(v=>v===u.id).length;
     const lastKey=Object.entries(bookings).filter(([k,v])=>v===u.id).sort((a,b)=>b[0].localeCompare(a[0]))[0];
-    const lastBook=lastKey?new Date(lastKey[0].split('_')[0]).toLocaleDateString('en-GB',{day:'numeric',month:'short'}):null;
+    const lastBook=lastKey?new Date(lastKey[0].split('_')[0]).toLocaleDateString(locale,{day:'numeric',month:'short'}):null;
     return`<div class="card">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
         <div class="avatar" style="width:36px;height:36px;font-size:12px;">${initials(u)}</div>
-        <div style="flex:1;"><p style="font-size:14px;font-weight:500;">${u.fname} ${u.lname}</p><p style="font-size:12px;color:#888;">Apt ${u.apt} · ${u.phone}</p></div>
-        <button class="deny-btn" onclick="revokeUser('${u.id}')">Revoke</button>
+        <div style="flex:1;"><p style="font-size:14px;font-weight:500;">${u.fname} ${u.lname}</p><p style="font-size:12px;color:#888;">${t('apartment')} ${u.apt} · ${u.phone}</p></div>
+        <button class="deny-btn" onclick="revokeUser('${u.id}')">${t('revoke')}</button>
       </div>
       <div style="display:flex;gap:16px;border-top:0.5px solid rgba(0,0,0,0.07);padding-top:8px;">
-        <div><p style="font-size:11px;color:#888;">Total bookings</p><p style="font-size:16px;font-weight:500;">${count}</p></div>
-        ${lastBook?`<div><p style="font-size:11px;color:#888;">Last booking</p><p style="font-size:16px;font-weight:500;">${lastBook}</p></div>`:''}
+        <div><p style="font-size:11px;color:#888;">${t('totalBookings')}</p><p style="font-size:16px;font-weight:500;">${count}</p></div>
+        ${lastBook?`<div><p style="font-size:11px;color:#888;">${t('lastBooking')}</p><p style="font-size:16px;font-weight:500;">${lastBook}</p></div>`:''}
       </div>
     </div>`;
   }).join('');
@@ -1038,15 +1056,25 @@ async function markAllRead(){
 // ── stats ─────────────────────────────────────────────────
 function renderStats(){
   const all=Object.entries(bookings);
+  const locale=lang==='he'?'he-IL':lang==='fr'?'fr-FR':'en-GB';
   document.getElementById('stats-metrics').innerHTML=`
-    <div class="metric-card"><div class="metric-val">${all.length}</div><div class="metric-lbl">Total bookings</div></div>
-    <div class="metric-card"><div class="metric-val">${users.filter(u=>!u.isAdmin&&u.approved).length}</div><div class="metric-lbl">Active tenants</div></div>
-    <div class="metric-card"><div class="metric-val">${users.filter(u=>!u.isAdmin&&!u.approved).length}</div><div class="metric-lbl">Pending</div></div>`;
+    <div class="metric-card"><div class="metric-val">${all.length}</div><div class="metric-lbl">${t('totalBookings')}</div></div>
+    <div class="metric-card"><div class="metric-val">${users.filter(u=>!u.isAdmin&&u.approved).length}</div><div class="metric-lbl">${t('activeTeants')}</div></div>
+    <div class="metric-card"><div class="metric-val">${users.filter(u=>!u.isAdmin&&!u.approved).length}</div><div class="metric-lbl">${t('pending')}</div></div>`;
+  // section titles
+  const rh=document.getElementById('rush-hours')?.previousElementSibling;
+  const pt=document.getElementById('per-tenant')?.previousElementSibling;
+  const bd=document.getElementById('busiest-days')?.previousElementSibling;
+  document.querySelectorAll('.section-title').forEach(el=>{
+    if(el.textContent.includes('Rush')||el.textContent.includes('עומס')||el.textContent.includes('pointe')) el.textContent=t('rushHours');
+    if(el.textContent.includes('per tenant')||el.textContent.includes('לדייר')||el.textContent.includes('locataire')) el.textContent=t('bookingsPerTenant');
+    if(el.textContent.includes('Busiest')||el.textContent.includes('עמוסים')||el.textContent.includes('chargés')) el.textContent=t('busiestDays');
+  });
   const hc={};HOURS.forEach(h=>hc[h]=0);
   all.forEach(([k])=>{const h=parseInt(k.split('_')[1]);hc[h]=(hc[h]||0)+1;});
   const mh=Math.max(...Object.values(hc),1);
   document.getElementById('rush-hours').innerHTML=HOURS.map(h=>{const c=hc[h]||0;const p=Math.round(c/mh*100);
-    return`<div class="stat-bar-wrap"><span style="font-size:12px;min-width:48px;color:#888;">${h.toString().padStart(2,'0')}:00</span><div class="stat-bar-bg"><div class="stat-bar-fill" style="width:${p}%"></div></div><span style="font-size:12px;min-width:16px;text-align:right;color:#888;">${c}</span></div>`;
+    return`<div class="stat-bar-wrap"><span style="font-size:12px;min-width:48px;color:#888;direction:ltr;">${h.toString().padStart(2,'0')}:00</span><div class="stat-bar-bg"><div class="stat-bar-fill" style="width:${p}%"></div></div><span style="font-size:12px;min-width:16px;text-align:right;color:#888;">${c}</span></div>`;
   }).join('');
   const tenants=users.filter(u=>!u.isAdmin&&u.approved);
   const mt=Math.max(...tenants.map(u=>Object.values(bookings).filter(v=>v===u.id).length),1);
@@ -1057,9 +1085,9 @@ function renderStats(){
   const dc={};all.forEach(([k])=>{const d=k.split('_')[0];dc[d]=(dc[d]||0)+1;});
   const de=Object.entries(dc).sort((a,b)=>b[1]-a[1]).slice(0,5);const md=Math.max(...de.map(x=>x[1]),1);
   document.getElementById('busiest-days').innerHTML=de.length?de.map(([date,c])=>{
-    const dl=new Date(date).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});const p=Math.round(c/md*100);
+    const dl=new Date(date).toLocaleDateString(locale,{weekday:'short',day:'numeric',month:'short'});const p=Math.round(c/md*100);
     return`<div class="stat-bar-wrap"><span style="font-size:12px;min-width:80px;color:#888;">${dl}</span><div class="stat-bar-bg"><div class="stat-bar-fill" style="width:${p}%;background:#D85A30;"></div></div><span style="font-size:12px;min-width:16px;text-align:right;color:#888;">${c}</span></div>`;
-  }).join(''):'<p style="font-size:13px;color:#888;">No data yet.</p>';
+  }).join(''):`<p style="font-size:13px;color:#888;">${t('noDataYet')}</p>`;
 }
 
 // ── approvals ─────────────────────────────────────────────
@@ -1067,20 +1095,20 @@ function renderApprovals(){
   const pending=users.filter(u=>!u.isAdmin&&!u.approved);
   const approved=users.filter(u=>!u.isAdmin&&u.approved);
   document.getElementById('admin-pending').innerHTML=!pending.length
-    ?'<p style="font-size:13px;color:#888;margin-bottom:12px;">No pending registrations.</p>'
+    ?`<p style="font-size:13px;color:#888;margin-bottom:12px;">${t('noPendingReg')}</p>`
     :pending.map(u=>`<div class="card" id="user-card-${u.id}" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;transition:background 1.5s;">
-        <div style="flex:1;min-width:130px;"><p style="font-size:14px;font-weight:500;">${u.fname} ${u.lname}</p><p style="font-size:12px;color:#888;">Apt ${u.apt} · ${u.phone}</p></div>
-        <span class="badge badge-pending">Pending</span>
-        <button class="approve-btn" onclick="approveUser('${u.id}')">Approve</button>
-        <button class="deny-btn" onclick="denyUser('${u.id}')">Deny</button>
+        <div style="flex:1;min-width:130px;"><p style="font-size:14px;font-weight:500;">${u.fname} ${u.lname}</p><p style="font-size:12px;color:#888;">${t('apartment')} ${u.apt} · ${u.phone}</p></div>
+        <span class="badge badge-pending">${t('pending')}</span>
+        <button class="approve-btn" onclick="approveUser('${u.id}')">${t('approve')}</button>
+        <button class="deny-btn" onclick="denyUser('${u.id}')">${t('deny')}</button>
       </div>`).join('');
   document.getElementById('admin-approved').innerHTML=!approved.length
-    ?'<p style="font-size:13px;color:#888;">No approved tenants.</p>'
+    ?`<p style="font-size:13px;color:#888;">${t('noApprovedTenants')}</p>`
     :approved.map(u=>`<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:0.5px solid rgba(0,0,0,0.07);">
         <div class="avatar">${initials(u)}</div>
-        <div style="flex:1;"><p style="font-size:13px;font-weight:500;">${u.fname} ${u.lname}</p><p style="font-size:11px;color:#888;">Apt ${u.apt} · ${u.phone}</p></div>
-        <span class="badge badge-approved">Approved</span>
-        <button class="deny-btn" style="margin-left:4px;" onclick="revokeUser2('${u.id}')">Revoke</button>
+        <div style="flex:1;"><p style="font-size:13px;font-weight:500;">${u.fname} ${u.lname}</p><p style="font-size:11px;color:#888;">${t('apartment')} ${u.apt} · ${u.phone}</p></div>
+        <span class="badge badge-approved">${t('approved')}</span>
+        <button class="deny-btn" style="margin-left:4px;" onclick="revokeUser2('${u.id}')">${t('revoke')}</button>
       </div>`).join('');
 }
 function scrollHighlightUser(id){
@@ -1135,7 +1163,7 @@ function handleNotifClick(n){
 }
 function renderNotifications(){
   const list=document.getElementById('notif-list');
-  if(!notifications.length){list.innerHTML='<p style="font-size:13px;color:#888;padding:8px 0;">No alerts yet.</p>';return;}
+  if(!notifications.length){list.innerHTML=`<p style="font-size:14px;color:#888;padding:8px 0;">${t('noAlerts')}</p>`;return;}
   list.innerHTML='';
   notifications.forEach(n=>{
     const el=document.createElement('div');
@@ -1146,7 +1174,7 @@ function renderNotifications(){
       <div class="notif-icon ${n.type}">${n.type==='reg'?'👤':'📅'}</div>
       <div style="flex:1;">
         <p style="font-size:13px;line-height:1.4;">${n.text}</p>
-        <p style="font-size:11px;color:#888;margin-top:3px;">${n.time}${clickable?' · <span style="color:#185FA5;">Tap to view</span>':''}</p>
+        <p style="font-size:11px;color:#888;margin-top:3px;">${n.time}${clickable?` · <span style="color:#185FA5;">${t('tapToView')}</span>`:''}</p>
       </div>
       ${!n.read?'<div style="width:8px;height:8px;border-radius:50%;background:#E24B4A;flex-shrink:0;margin-top:4px;"></div>':''}`;
     if(clickable)el.addEventListener('click',()=>handleNotifClick(n));
