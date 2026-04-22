@@ -24,6 +24,7 @@ const transporter = nodemailer.createTransport({
 });
 
 // ── middleware ────────────────────────────────────────────
+app.set('trust proxy', 1);
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(session({
@@ -31,7 +32,7 @@ app.use(session({
   secret: process.env.SESSION_SECRET || 'change-me-in-production',
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: false, sameSite: 'lax', httpOnly: true, maxAge: 7 * 24 * 60 * 60 * 1000 }
+  cookie: { secure: true, sameSite: 'none', httpOnly: true, maxAge: 7 * 24 * 60 * 60 * 1000 }
 }));
 
 // ── auth middleware ───────────────────────────────────────
@@ -198,6 +199,14 @@ app.post('/api/auth/register', async (req, res) => {
 
 // ── routes: bookings ──────────────────────────────────────
 
+// Get all bookings (for all users to see the full schedule)
+app.get('/api/bookings/all', requireAuth, async (req, res) => {
+  const { rows } = await pool.query(
+    'SELECT b.date,b.hour,b.user_id,u.fname,u.lname FROM bookings b JOIN users u ON u.id=b.user_id ORDER BY b.date,b.hour'
+  );
+  res.json(rows);
+});
+
 app.get('/api/bookings', requireAuth, async (req, res) => {
   const { date } = req.query;
   let query = 'SELECT b.date,b.hour,b.user_id,u.fname,u.lname FROM bookings b JOIN users u ON u.id=b.user_id';
@@ -263,6 +272,25 @@ app.patch('/api/users/:id', requireAuth, requireAdmin, async (req, res) => {
 app.post('/api/users/:id/approve', requireAuth, requireAdmin, async (req, res) => {
   const { approved } = req.body;
   const { rows } = await pool.query('UPDATE users SET approved=$1 WHERE id=$2 RETURNING *', [approved, req.params.id]);
+  if (!rows.length) return res.status(404).json({ error: 'User not found' });
+  const user = rows[0];
+  // send approval email if being approved and has email
+  if (approved && user.email) {
+    try {
+      await transporter.sendMail({
+        from: `"Court Booking" <${process.env.GMAIL_USER}>`,
+        to: user.email,
+        subject: 'Your court booking account has been approved!',
+        html: `
+          <div style="font-family:sans-serif;max-width:400px;margin:0 auto;padding:24px;">
+            <h2>You're approved! 🎾</h2>
+            <p>Hi ${user.fname}, your court booking account has been approved by the building manager.</p>
+            <p>You can now sign in and start booking the court.</p>
+            <p style="color:#888;font-size:13px;">Sign in with your phone number and PIN.</p>
+          </div>`
+      });
+    } catch(e) { console.error('Approval email error:', e.message); }
+  }
   res.json(rows[0]);
 });
 
