@@ -63,6 +63,11 @@ input:focus{outline:none;border-color:#378ADD;}
 .notif-icon.book{background:#E6F1FB;}
 .bell-wrap{position:relative;display:inline-flex;align-items:center;}
 .bell-badge{position:absolute;top:-4px;right:-4px;background:#E24B4A;color:white;border-radius:50%;width:16px;height:16px;font-size:10px;display:flex;align-items:center;justify-content:center;font-weight:500;}
+.lang-picker{position:relative;display:inline-block;}
+.lang-dropdown{position:absolute;top:36px;right:0;background:#fff;border:0.5px solid rgba(0,0,0,0.15);border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,0.12);z-index:100;overflow:hidden;min-width:130px;}
+.lang-option{display:flex;align-items:center;gap:8px;padding:10px 14px;cursor:pointer;font-size:14px;}
+.lang-option:hover{background:#f5f5f3;}
+.lang-option.active{font-weight:600;background:#f0f0ee;}
 .spinner{display:inline-block;width:16px;height:16px;border:2px solid #ccc;border-top-color:#378ADD;border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;margin-right:6px;}
 @keyframes spin{to{transform:rotate(360deg);}}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;z-index:999;opacity:0;transition:opacity 0.3s;pointer-events:none;}
@@ -75,16 +80,26 @@ input:focus{outline:none;border-color:#378ADD;}
 
 <!-- LOGIN STEP 1 -->
 <div id="screen-login" class="screen active">
-  <p style="font-size:22px;font-weight:500;margin-bottom:4px;margin-top:1rem;">Court booking</p>
-  <p style="font-size:13px;color:#666;margin-bottom:1.25rem;">Building tennis court reservations</p>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-top:1rem;margin-bottom:4px;">
+    <p style="font-size:22px;font-weight:500;" id="login-title">Court booking</p>
+    <div class="lang-picker">
+      <button onclick="toggleLangMenu()" style="background:none;border:none;cursor:pointer;font-size:22px;padding:4px;" title="Language">🌐</button>
+      <div class="lang-dropdown" id="lang-dropdown" style="display:none;">
+        <div class="lang-option" onclick="setLang('en')">🇬🇧 English</div>
+        <div class="lang-option" onclick="setLang('he')">🇮🇱 עברית</div>
+        <div class="lang-option" onclick="setLang('fr')">🇫🇷 Français</div>
+      </div>
+    </div>
+  </div>
+  <p style="font-size:14px;color:#666;margin-bottom:1.25rem;" id="login-sub">Building tennis court reservations</p>
   <div class="card">
-    <label>Phone number</label>
+    <label id="lbl-phone">Phone number</label>
     <input type="tel" id="login-phone" placeholder="050 1234567" oninput="fmtPhone(this)"/>
     <div id="login-msg"></div>
-    <button style="margin-top:14px;width:100%;padding:10px;border-radius:8px;border:none;background:#1a1a1a;color:#fff;font-size:15px;cursor:pointer;" onclick="doLoginStep1()">Continue</button>
+    <button style="margin-top:14px;width:100%;padding:10px;border-radius:8px;border:none;background:#1a1a1a;color:#fff;font-size:15px;cursor:pointer;" onclick="doLoginStep1()" id="btn-continue">Continue</button>
     <div style="text-align:center;margin-top:12px;">
-      <span style="font-size:13px;color:#666;">New tenant? </span>
-      <button onclick="showScreen('screen-reg1')" style="font-size:13px;background:none;border:none;cursor:pointer;color:#185FA5;text-decoration:underline;">Register</button>
+      <span style="font-size:14px;color:#666;" id="lbl-new-tenant">New tenant? </span>
+      <button onclick="showScreen('screen-reg1')" style="font-size:14px;background:none;border:none;cursor:pointer;color:#185FA5;text-decoration:underline;" id="btn-register">Register</button>
     </div>
   </div>
 </div>
@@ -194,13 +209,21 @@ input:focus{outline:none;border-color:#378ADD;}
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:8px;">
+      <div class="lang-picker">
+        <button onclick="toggleLangMenu()" style="background:none;border:none;cursor:pointer;font-size:20px;padding:4px;" title="Language">🌐</button>
+        <div class="lang-dropdown" id="lang-dropdown-app" style="display:none;">
+          <div class="lang-option" onclick="setLang('en')">🇬🇧 English</div>
+          <div class="lang-option" onclick="setLang('he')">🇮🇱 עברית</div>
+          <div class="lang-option" onclick="setLang('fr')">🇫🇷 Français</div>
+        </div>
+      </div>
       <button id="notif-btn" style="display:none;background:none;border:none;cursor:pointer;padding:4px;" onclick="showTab('notifications')">
         <div class="bell-wrap">
           <span style="font-size:20px;">🔔</span>
           <span class="bell-badge" id="notif-count" style="display:none;">0</span>
         </div>
       </button>
-      <button onclick="doLogout()" style="font-size:12px;padding:5px 12px;border-radius:8px;border:0.5px solid rgba(0,0,0,0.15);background:transparent;cursor:pointer;">Sign out</button>
+      <button onclick="doLogout()" style="font-size:13px;padding:5px 12px;border-radius:8px;border:0.5px solid rgba(0,0,0,0.15);background:transparent;cursor:pointer;" id="btn-signout">Sign out</button>
     </div>
   </div>
 
@@ -445,19 +468,48 @@ function detectLang(){
   if(l.startsWith('fr')) return 'fr';
   return 'en';
 }
-let lang=detectLang();
+let lang=localStorage.getItem('lang')||detectLang();
 function t(k){ return LANGS[lang][k]||LANGS.en[k]||k; }
+function toggleLangMenu(){
+  const d1=document.getElementById('lang-dropdown');
+  const d2=document.getElementById('lang-dropdown-app');
+  const menu=d1||d2;
+  // toggle whichever is visible
+  [d1,d2].forEach(d=>{if(d)d.style.display=d.style.display==='none'?'block':'none';});
+  // close on outside click
+  setTimeout(()=>document.addEventListener('click',closeLangMenus,{once:true}),10);
+}
+function closeLangMenus(){
+  ['lang-dropdown','lang-dropdown-app'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.style.display='none';
+  });
+}
+function setLang(l){
+  lang=l;
+  localStorage.setItem('lang',l);
+  closeLangMenus();
+  applyLang();
+  // re-render current tab
+  renderSlots();
+}
 function applyLang(){
   const isRTL=(lang==='he');
   document.documentElement.lang=lang;
   document.documentElement.dir=isRTL?'rtl':'ltr';
-  // update all static text
-  document.querySelectorAll('[data-i18n]').forEach(el=>{
-    const k=el.getAttribute('data-i18n');
-    el.textContent=t(k);
+  // update login screen static text
+  const map={
+    'login-title':'appTitle','login-sub':'appSub',
+    'lbl-phone':'phone','btn-continue':'continue',
+    'lbl-new-tenant':'newTenant','btn-register':'register',
+    'btn-signout':'signOut',
+  };
+  Object.entries(map).forEach(([id,key])=>{
+    const el=document.getElementById(id);if(el)el.textContent=t(key);
   });
-  document.querySelectorAll('[data-i18n-placeholder]').forEach(el=>{
-    el.placeholder=t(el.getAttribute('data-i18n-placeholder'));
+  // highlight active lang in dropdown
+  document.querySelectorAll('.lang-option').forEach(el=>{
+    const txt=el.textContent;
+    el.classList.toggle('active',(lang==='he'&&txt.includes('עברית'))||(lang==='fr'&&txt.includes('Français'))||(lang==='en'&&txt.includes('English')));
   });
 }
 
@@ -506,14 +558,14 @@ async function apiDelete(path){
 
 async function loadAppData(){
   try{
-    // load users list (admin only)
+    // load users list for everyone (needed to show names on booked slots)
+    const u=await apiGet('/users');
+    users=u.map(x=>({id:x.id,fname:x.fname,lname:x.lname,apt:x.apt,phone:x.phone,isAdmin:x.is_admin,approved:x.approved}));
     if(currentUser.isAdmin){
-      const u=await apiGet('/users');
-      users=u.map(x=>({id:x.id,fname:x.fname,lname:x.lname,apt:x.apt,phone:x.phone,isAdmin:x.is_admin,approved:x.approved}));
       const n=await apiGet('/notifications');
       notifications=n.map(x=>({id:x.id,type:x.type,text:x.text,time:new Date(x.created_at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}),read:x.read,targetUserId:x.target_user_id,targetDate:x.target_date,targetHour:x.target_hour}));
     }
-    // load all bookings (no date filter — get everything)
+    // load all bookings
     const b=await apiGet('/bookings/all');
     bookings={};
     b.forEach(r=>{
