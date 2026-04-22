@@ -21,7 +21,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .slot-row:last-child{border-bottom:none;}
 .slot-time{font-size:14px;font-weight:500;min-width:110px;direction:ltr;unicode-bidi:embed;}
 .top-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;}
-.tab-bar{display:flex;gap:5px;margin-bottom:1.25rem;overflow-x:auto;padding-bottom:2px;}
+.tab-bar{display:flex;gap:5px;margin-bottom:1.25rem;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.tab-bar::-webkit-scrollbar{display:none;}
 .tab{flex:1;padding:8px 4px;font-size:13px;border:0.5px solid rgba(0,0,0,0.15);border-radius:8px;background:transparent;cursor:pointer;color:#666;white-space:nowrap;}
 .tab.active{background:#eee;color:#111;font-weight:500;}
 .date-nav{display:flex;align-items:center;gap:8px;margin-bottom:1rem;}
@@ -200,12 +201,12 @@ input:focus{outline:none;border-color:#378ADD;}
 
 <!-- MAIN APP -->
 <div id="screen-app" class="screen">
-  <div class="top-bar" style="margin-top:0.5rem;">
-    <div style="display:flex;align-items:center;gap:10px;">
-      <div class="avatar" id="user-avatar" style="width:34px;height:34px;font-size:11px;"></div>
-      <div>
-        <p id="user-label" style="font-size:14px;font-weight:500;"></p>
-        <p id="user-apt" style="font-size:11px;color:#666;"></p>
+  <div class="top-bar" style="margin-top:0.5rem;flex-wrap:wrap;gap:8px;">
+    <div style="display:flex;align-items:center;gap:10px;min-width:0;flex:1;">
+      <div class="avatar" id="user-avatar" style="width:36px;height:36px;font-size:12px;flex-shrink:0;"></div>
+      <div style="min-width:0;">
+        <p id="user-label" style="font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></p>
+        <p id="user-apt" style="font-size:12px;color:#666;"></p>
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:8px;">
@@ -258,20 +259,20 @@ input:focus{outline:none;border-color:#378ADD;}
         </div>
         <div style="border-top:0.5px solid rgba(0,0,0,0.07);padding-top:12px;">
           <div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:0.5px solid rgba(0,0,0,0.05);">
-            <span style="font-size:13px;color:#888;">Apartment</span>
+            <span style="font-size:13px;color:#888;" id="lbl-apt">Apartment</span>
             <span style="font-size:13px;font-weight:500;" id="profile-apt"></span>
           </div>
           <div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:0.5px solid rgba(0,0,0,0.05);">
-            <span style="font-size:13px;color:#888;">Phone</span>
+            <span style="font-size:13px;color:#888;" id="lbl-profile-phone">Phone</span>
             <span style="font-size:13px;font-weight:500;" id="profile-phone"></span>
           </div>
           <div style="display:flex;justify-content:space-between;padding:9px 0;">
-            <span style="font-size:13px;color:#888;">Email</span>
+            <span style="font-size:13px;color:#888;" id="lbl-profile-email">Email</span>
             <span style="font-size:13px;font-weight:500;" id="profile-email"></span>
           </div>
         </div>
       </div>
-      <button style="width:100%;padding:10px;border-radius:8px;border:0.5px solid rgba(0,0,0,0.15);background:transparent;font-size:14px;cursor:pointer;" onclick="showPinForm()">Change PIN</button>
+      <button id="btn-change-pin" style="width:100%;padding:10px;border-radius:8px;border:0.5px solid rgba(0,0,0,0.15);background:transparent;font-size:14px;cursor:pointer;" onclick="showPinForm()">Change PIN</button>
     </div>
 
     <!-- change PIN form (hidden by default) -->
@@ -281,14 +282,14 @@ input:focus{outline:none;border-color:#378ADD;}
         <p style="font-size:16px;font-weight:500;">Change PIN</p>
       </div>
       <div class="card">
-        <label>Current PIN</label>
+        <label id="lbl-current-pin">Current PIN</label>
         <input type="password" id="pin-current" maxlength="4" placeholder="••••" style="letter-spacing:6px;font-size:20px;text-align:center;"/>
-        <label>New PIN</label>
+        <label id="lbl-new-pin">New PIN</label>
         <input type="password" id="pin-new" maxlength="4" placeholder="••••" style="letter-spacing:6px;font-size:20px;text-align:center;"/>
-        <label>Confirm new PIN</label>
+        <label id="lbl-confirm-pin">Confirm new PIN</label>
         <input type="password" id="pin-confirm" maxlength="4" placeholder="••••" style="letter-spacing:6px;font-size:20px;text-align:center;"/>
         <div id="pin-msg" style="margin-top:10px;"></div>
-        <button style="margin-top:14px;width:100%;padding:10px;border-radius:8px;border:none;background:#1a1a1a;color:#fff;font-size:15px;cursor:pointer;" onclick="changePin()">Update PIN</button>
+        <button id="btn-update-pin" style="margin-top:14px;width:100%;padding:10px;border-radius:8px;border:none;background:#1a1a1a;color:#fff;font-size:15px;cursor:pointer;" onclick="changePin()">Update PIN</button>
       </div>
     </div>
 
@@ -503,6 +504,11 @@ function applyLang(){
     'lbl-phone':'phone','btn-continue':'continue',
     'lbl-new-tenant':'newTenant','btn-register':'register',
     'btn-signout':'signOut',
+    'lbl-apt':'apartment','lbl-profile-phone':'phone',
+    'lbl-profile-email':'email',
+    'btn-change-pin':'changePin',
+    'lbl-current-pin':'currentPin','lbl-new-pin':'newPin',
+    'lbl-confirm-pin':'confirmNewPin','btn-update-pin':'updatePin',
   };
   Object.entries(map).forEach(([id,key])=>{
     const el=document.getElementById(id);if(el)el.textContent=t(key);
@@ -559,14 +565,23 @@ function applyLang(){
 
 // ── helpers ──────────────────────────────────────────────
 function genId(){return Math.random().toString(36).slice(2,8);}
-function initials(u){return((u.fname||'')[0]+(u.lname||'')[0]).toUpperCase();}
+function initials(u){
+  const f=(u.fname||'')[0]||'';
+  const l=(u.lname||'')[0]||'';
+  return (f+l).toUpperCase()||'?';
+}
 function dateKey(offset){const d=new Date(today);d.setDate(d.getDate()+offset);return d.toISOString().slice(0,10);}
 function offsetFromKey(dk){const d=new Date(dk);return Math.round((d-today)/86400000);}
 function dateLabel(offset){
   const d=new Date(today);d.setDate(d.getDate()+offset);
-  if(offset===0) return 'Today, '+d.toLocaleDateString('en-GB',{day:'numeric',month:'short'});
-  if(offset===1) return 'Tomorrow, '+d.toLocaleDateString('en-GB',{day:'numeric',month:'short'});
-  return d.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'short'});
+  const locale=lang==='he'?'he-IL':lang==='fr'?'fr-FR':'en-GB';
+  const todayWord=lang==='he'?'היום':lang==='fr'?'Aujourd\'hui':'Today';
+  const tomorrowWord=lang==='he'?'מחר':lang==='fr'?'Demain':'Tomorrow';
+  const dateStr=d.toLocaleDateString(locale,{day:'numeric',month:'short'});
+  const fullStr=d.toLocaleDateString(locale,{weekday:'long',day:'numeric',month:'short'});
+  if(offset===0) return todayWord+', '+dateStr;
+  if(offset===1) return tomorrowWord+', '+dateStr;
+  return fullStr;
 }
 function timeStr(h){return `\u202A${h.toString().padStart(2,'0')}:00 – ${(h+1).toString().padStart(2,'0')}:00\u202C`;}
 function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
@@ -811,12 +826,12 @@ async function changePin(){
   if(newPin!==confirm){msg.innerHTML='<div class="msg msg-error">New PINs don\'t match.</div>';return;}
   try{
     await apiPost('/auth/change-pin',{currentPin:current,newPin});
-    msg.innerHTML='<div class="msg msg-success">PIN updated successfully!</div>';
+    msg.innerHTML=`<div class="msg msg-success">${t('pinUpdated')}</div>`;
     document.getElementById('pin-current').value='';
     document.getElementById('pin-new').value='';
     document.getElementById('pin-confirm').value='';
   }catch(e){
-    msg.innerHTML='<div class="msg msg-error">Current PIN is incorrect.</div>';
+    msg.innerHTML=`<div class="msg msg-error">${t('pinIncorrect')}</div>`;
   }
 }
 
