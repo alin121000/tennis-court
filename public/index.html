@@ -636,7 +636,11 @@ function dateLabel(offset){
   return fullStr;
 }
 function timeStr(h){return `\u202A${h.toString().padStart(2,'0')}:00 – ${(h+1).toString().padStart(2,'0')}:00\u202C`;}
-function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  applyLang();
+}
 function userName(uid){const u=users.find(x=>x.id===uid);return u?u.fname+' '+u.lname:'Unknown';}
 function fmtPhone(el){let r=el.value.replace(/\D/g,'').slice(0,10);if(r.length>3)r=r.slice(0,3)+' '+r.slice(3);el.value=r;}
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
