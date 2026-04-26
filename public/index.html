@@ -108,23 +108,23 @@ input:focus{outline:none;border-color:#378ADD;}
 <!-- LOGIN STEP 2: PIN -->
 <div id="screen-login2" class="screen">
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:1.25rem;margin-top:1rem;">
-    <button onclick="showScreen('screen-login')" style="background:none;border:none;cursor:pointer;font-size:20px;color:#888;">&#8592;</button>
-    <p style="font-size:17px;font-weight:500;">Enter your PIN</p>
+    <button id="back-login2" onclick="showScreen('screen-login')" style="background:none;border:none;cursor:pointer;font-size:20px;color:#888;">&#8592;</button>
+    <p style="font-size:17px;font-weight:500;" id="lbl-enter-pin">Enter your PIN</p>
   </div>
   <div class="card">
-    <p style="font-size:13px;color:#666;margin-bottom:4px;">Signing in as <strong id="login2-name"></strong></p>
-    <label>PIN</label>
+    <p style="font-size:13px;color:#666;margin-bottom:4px;"><span id="lbl-signing-as">Signing in as</span> <strong id="login2-name"></strong></p>
+    <label id="lbl-pin">PIN</label>
     <input type="password" id="login-pin" maxlength="4" placeholder="••••" style="letter-spacing:8px;font-size:22px;text-align:center;" oninput="if(this.value.length===4)doLoginStep2()"/>
     <div id="login2-msg"></div>
-    <button style="margin-top:14px;width:100%;padding:10px;border-radius:8px;border:none;background:#1a1a1a;color:#fff;font-size:15px;cursor:pointer;" onclick="doLoginStep2()">Sign in</button>
+    <button style="margin-top:14px;width:100%;padding:10px;border-radius:8px;border:none;background:#1a1a1a;color:#fff;font-size:15px;cursor:pointer;" onclick="doLoginStep2()" id="btn-signin">Sign in</button>
   </div>
 </div>
 
 <!-- REG STEP 1: details -->
 <div id="screen-reg1" class="screen">
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:1.25rem;margin-top:1rem;">
-    <button onclick="showScreen('screen-login')" style="background:none;border:none;cursor:pointer;font-size:20px;color:#888;">&#8592;</button>
-    <p style="font-size:17px;font-weight:500;">Create account — 1 of 3</p>
+    <button id="back-reg1" onclick="showScreen('screen-login')" style="background:none;border:none;cursor:pointer;font-size:20px;color:#888;">&#8592;</button>
+    <p style="font-size:17px;font-weight:500;" id="lbl-step1">Create account — 1 of 3</p>
   </div>
   <div class="card">
     <label>First name</label><input type="text" id="reg-fname" placeholder="Dana" autocomplete="given-name"/>
@@ -143,38 +143,38 @@ input:focus{outline:none;border-color:#378ADD;}
 <!-- REG STEP 2: email OTP -->
 <div id="screen-reg2" class="screen">
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:1.25rem;margin-top:1rem;">
-    <button onclick="showScreen('screen-reg1')" style="background:none;border:none;cursor:pointer;font-size:20px;color:#888;">&#8592;</button>
-    <p style="font-size:17px;font-weight:500;">Verify email — 2 of 3</p>
+    <button id="back-reg2" onclick="showScreen('screen-reg1')" style="background:none;border:none;cursor:pointer;font-size:20px;color:#888;">&#8592;</button>
+    <p style="font-size:17px;font-weight:500;" id="lbl-step2">Verify email — 2 of 3</p>
   </div>
   <div class="card">
-    <p style="font-size:13px;color:#666;margin-bottom:10px;">We sent a 4-digit code to <strong id="sms-target"></strong></p>
+    <p style="font-size:13px;color:#666;margin-bottom:10px;"><span id="lbl-we-sent">We sent a 4-digit code to</span> <strong id="sms-target"></strong></p>
     <div class="sms-box" id="sms-box-wrap">
-      <strong>📧 Check your email</strong><br>
+      <strong>📧 <span id="lbl-check-email">Check your email</span></strong><br>
       <span id="sms-preview" style="color:#555;"></span>
     </div>
-    <label>Enter the 4-digit code</label>
+    <label id="lbl-enter-code">Enter the 4-digit code</label>
     <input type="text" id="reg-code" maxlength="4" placeholder="3847" inputmode="numeric"
       style="letter-spacing:8px;font-size:22px;text-align:center;"
       oninput="if(this.value.length===4)verifyCode()"/>
     <div id="reg2-msg"></div>
-    <button style="margin-top:14px;width:100%;padding:10px;border-radius:8px;border:none;background:#1a1a1a;color:#fff;font-size:15px;cursor:pointer;" onclick="verifyCode()">Verify</button>
+    <button style="margin-top:14px;width:100%;padding:10px;border-radius:8px;border:none;background:#1a1a1a;color:#fff;font-size:15px;cursor:pointer;" onclick="verifyCode()" id="btn-verify">Verify</button>
   </div>
 </div>
 
 <!-- REG STEP 3: PIN -->
 <div id="screen-reg3" class="screen">
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:1.25rem;margin-top:1rem;">
-    <button onclick="showScreen('screen-reg2')" style="background:none;border:none;cursor:pointer;font-size:20px;color:#888;">&#8592;</button>
-    <p style="font-size:17px;font-weight:500;">Set your PIN — 3 of 3</p>
+    <button id="back-reg3" onclick="showScreen('screen-reg2')" style="background:none;border:none;cursor:pointer;font-size:20px;color:#888;">&#8592;</button>
+    <p style="font-size:17px;font-weight:500;" id="lbl-step3">Set your PIN — 3 of 3</p>
   </div>
   <div class="card">
-    <p style="font-size:13px;color:#666;margin-bottom:4px;">Phone verified! Choose a 4-digit PIN you'll use to sign in.</p>
-    <label>Choose a PIN</label>
+    <p style="font-size:13px;color:#666;margin-bottom:4px;" id="lbl-phone-verified">Phone verified! Choose a 4-digit PIN you'll use to sign in.</p>
+    <label id="lbl-choose-pin">Choose a PIN</label>
     <input type="password" id="reg-pin" maxlength="4" placeholder="••••" style="letter-spacing:8px;font-size:22px;text-align:center;"/>
-    <label>Confirm PIN</label>
+    <label id="lbl-confirm-reg-pin">Confirm PIN</label>
     <input type="password" id="reg-pin2" maxlength="4" placeholder="••••" style="letter-spacing:8px;font-size:22px;text-align:center;"/>
     <div id="reg3-msg"></div>
-    <button style="margin-top:14px;width:100%;padding:10px;border-radius:8px;border:none;background:#1a1a1a;color:#fff;font-size:15px;cursor:pointer;" onclick="submitReg()">Submit registration</button>
+    <button style="margin-top:14px;width:100%;padding:10px;border-radius:8px;border:none;background:#1a1a1a;color:#fff;font-size:15px;cursor:pointer;" onclick="submitReg()" id="btn-submit-reg">Submit registration</button>
   </div>
 </div>
 
@@ -372,7 +372,16 @@ const LANGS = {
     appTitle:'Court booking', appSub:'Building tennis court reservations',
     phone:'Phone number', pin:'PIN', continue:'Continue', signIn:'Sign in',
     newTenant:'New tenant?', register:'Register', signingInAs:'Signing in as',
-    createAccount:'Create account', step:'Step', of:'of',
+    enterPin:'Enter your PIN', signingInAs:'Signing in as',
+    step1:'Create account — 1 of 3', step2:'Verify email — 2 of 3',
+    step3:'Set your PIN — 3 of 3', regSentTitle:'Registration sent!',
+    waitingForApproval:'Waiting for manager approval.',
+    buildingManager:'Building manager',
+    weSentCode:'We sent a 4-digit code to', checkEmail:'Check your email',
+    enterCode:'Enter the 4-digit code', verify:'Verify',
+    phoneVerified:"Phone verified! Choose a 4-digit PIN you'll use to sign in.",
+    choosePin:'Choose a PIN', confirmRegPin:'Confirm PIN',
+    submitReg:'Submit registration', backToSignIn:'Back to sign in',
     firstName:'First name', lastName:'Last name', apt:'Apartment number',
     email:'Email address (for verification)', continueVerify:'Continue — verify email',
     verifyEmail:'Verify email', verifyPhone:'Verify phone',
@@ -407,7 +416,16 @@ const LANGS = {
     appTitle:'הזמנת מגרש', appSub:'הזמנות מגרש טניס בבניין',
     phone:'מספר טלפון', pin:'קוד PIN', continue:'המשך', signIn:'כניסה',
     newTenant:'דייר חדש?', register:'הרשמה', signingInAs:'כניסה בתור',
-    createAccount:'יצירת חשבון', step:'שלב', of:'מתוך',
+    enterPin:'הכנס PIN', signingInAs:'כניסה בתור',
+    step1:'יצירת חשבון — שלב 1 מתוך 3', step2:'אימות אימייל — שלב 2 מתוך 3',
+    step3:'הגדרת PIN — שלב 3 מתוך 3', regSentTitle:'ההרשמה נשלחה!',
+    waitingForApproval:'ממתין לאישור המנהל.',
+    buildingManager:'מנהל הבניין',
+    weSentCode:'שלחנו קוד בן 4 ספרות ל', checkEmail:'בדוק את האימייל שלך',
+    enterCode:'הכנס את הקוד', verify:'אמת',
+    phoneVerified:'הטלפון אומת! בחר PIN בן 4 ספרות.',
+    choosePin:'בחר PIN', confirmRegPin:'אשר PIN',
+    submitReg:'שלח הרשמה', backToSignIn:'חזרה לכניסה',
     firstName:'שם פרטי', lastName:'שם משפחה', apt:'מספר דירה',
     email:'כתובת אימייל (לאימות)', continueVerify:'המשך — אימות אימייל',
     verifyEmail:'אימות אימייל', verifyPhone:'אימות טלפון',
@@ -442,7 +460,16 @@ const LANGS = {
     appTitle:'Réservation de court', appSub:'Réservations du court de tennis',
     phone:'Numéro de téléphone', pin:'Code PIN', continue:'Continuer', signIn:'Se connecter',
     newTenant:'Nouveau locataire?', register:"S'inscrire", signingInAs:'Connexion en tant que',
-    createAccount:'Créer un compte', step:'Étape', of:'sur',
+    enterPin:'Entrez votre PIN', signingInAs:'Connexion en tant que',
+    step1:'Créer un compte — Étape 1 sur 3', step2:"Vérifier l'e-mail — Étape 2 sur 3",
+    step3:'Définir le PIN — Étape 3 sur 3', regSentTitle:'Inscription envoyée!',
+    waitingForApproval:"En attente d'approbation du gestionnaire.",
+    buildingManager:'Gestionnaire',
+    weSentCode:'Nous avons envoyé un code à', checkEmail:'Vérifiez votre e-mail',
+    enterCode:'Entrez le code à 4 chiffres', verify:'Vérifier',
+    phoneVerified:'Téléphone vérifié! Choisissez un PIN à 4 chiffres.',
+    choosePin:'Choisir un PIN', confirmRegPin:'Confirmer le PIN',
+    submitReg:"Soumettre l'inscription", backToSignIn:'Retour à la connexion',
     firstName:'Prénom', lastName:'Nom de famille', apt:"Numéro d'appartement",
     email:'Adresse e-mail (pour vérification)', continueVerify:"Continuer — vérifier l'e-mail",
     verifyEmail:"Vérifier l'e-mail", verifyPhone:'Vérifier le téléphone',
@@ -516,6 +543,14 @@ function applyLang(){
     'lbl-phone':'phone','btn-continue':'continue',
     'lbl-new-tenant':'newTenant','btn-register':'register',
     'btn-signout':'signOut',
+    'lbl-enter-pin':'enterPin','lbl-signing-as':'signingInAs',
+    'lbl-pin':'pin','btn-signin':'signIn',
+    'lbl-step1':'step1','lbl-step2':'step2','lbl-step3':'step3',
+    'lbl-we-sent':'weSentCode','lbl-check-email':'checkEmail',
+    'lbl-enter-code':'enterCode','btn-verify':'verify',
+    'lbl-phone-verified':'phoneVerified',
+    'lbl-choose-pin':'choosePin','lbl-confirm-reg-pin':'confirmRegPin',
+    'btn-submit-reg':'submitReg',
     'lbl-apt':'apartment','lbl-profile-phone':'phone',
     'lbl-profile-email':'email',
     'btn-change-pin':'changePin',
@@ -529,6 +564,10 @@ function applyLang(){
   Object.entries(map).forEach(([id,key])=>{
     const el=document.getElementById(id);if(el)el.textContent=t(key);
   });
+
+  // fix back arrows for RTL
+  const backArrow=lang==='he'?'→':'←';
+  document.querySelectorAll('[id^="back-"]').forEach(btn=>btn.textContent=backArrow);
 
   // translate all tab buttons using data-tab attribute
   const tabMap={
@@ -710,7 +749,7 @@ async function doLoginStep2(){
 function mountApp(u){
   document.getElementById('user-avatar').textContent=initials(u);
   document.getElementById('user-label').textContent=u.fname+(u.lname?' '+u.lname:'');
-  document.getElementById('user-apt').textContent=u.apt!=='—'?'Apt '+u.apt:'Building manager';
+  document.getElementById('user-apt').textContent=u.apt&&u.apt!=='—'?t('apartment')+' '+u.apt:t('buildingManager');
   document.getElementById('user-tabs').style.display=u.isAdmin?'none':'flex';
   document.getElementById('admin-tabs').style.display=u.isAdmin?'flex':'none';
   document.getElementById('notif-btn').style.display=u.isAdmin?'inline-flex':'none';
