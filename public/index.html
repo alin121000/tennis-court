@@ -127,16 +127,16 @@ input:focus{outline:none;border-color:#378ADD;}
     <p style="font-size:17px;font-weight:500;" id="lbl-step1">Create account — 1 of 3</p>
   </div>
   <div class="card">
-    <label>First name</label><input type="text" id="reg-fname" placeholder="Dana" autocomplete="given-name"/>
-    <label>Last name</label><input type="text" id="reg-lname" placeholder="Levy" autocomplete="family-name"/>
-    <label>Apartment number</label>
+    <label id="lbl-fname">First name</label><input type="text" id="reg-fname" placeholder="Dana" autocomplete="given-name"/>
+    <label id="lbl-lname">Last name</label><input type="text" id="reg-lname" placeholder="Levy" autocomplete="family-name"/>
+    <label id="lbl-apt-num">Apartment number</label>
     <input type="number" id="reg-apt" placeholder="12" min="1" step="1" inputmode="numeric"/>
-    <label>Phone number</label>
+    <label id="lbl-phone-num">Phone number</label>
     <input type="tel" id="reg-phone" placeholder="050 1234567" oninput="fmtPhone(this)" autocomplete="tel"/>
-    <label>Email address (for verification)</label>
+    <label id="lbl-email-ver">Email address (for verification)</label>
     <input type="email" id="reg-email" placeholder="dana@email.com" autocomplete="email"/>
     <div id="reg1-msg"></div>
-    <button style="margin-top:14px;width:100%;padding:10px;border-radius:8px;border:none;background:#1a1a1a;color:#fff;font-size:15px;cursor:pointer;" onclick="goRegStep2()">Continue — verify email</button>
+    <button style="margin-top:14px;width:100%;padding:10px;border-radius:8px;border:none;background:#1a1a1a;color:#fff;font-size:15px;cursor:pointer;" onclick="goRegStep2()" id="btn-continue-verify">Continue — verify email</button>
   </div>
 </div>
 
@@ -382,8 +382,9 @@ const LANGS = {
     phoneVerified:"Phone verified! Choose a 4-digit PIN you'll use to sign in.",
     choosePin:'Choose a PIN', confirmRegPin:'Confirm PIN',
     submitReg:'Submit registration', backToSignIn:'Back to sign in',
-    firstName:'First name', lastName:'Last name', apt:'Apartment number',
-    email:'Email address (for verification)', continueVerify:'Continue — verify email',
+    firstName:'First name', lastName:'Last name', aptNumber:'Apartment number',
+    phoneNumber:'Phone number', emailVer:'Email address (for verification)',
+    continueVerify:'Continue — verify email',
     verifyEmail:'Verify email', verifyPhone:'Verify phone',
     weSentCode:'We sent a 4-digit code to', checkEmail:'📧 Check your email',
     enterCode:'Enter the 4-digit code', verify:'Verify',
@@ -426,8 +427,9 @@ const LANGS = {
     phoneVerified:'הטלפון אומת! בחר PIN בן 4 ספרות.',
     choosePin:'בחר PIN', confirmRegPin:'אשר PIN',
     submitReg:'שלח הרשמה', backToSignIn:'חזרה לכניסה',
-    firstName:'שם פרטי', lastName:'שם משפחה', apt:'מספר דירה',
-    email:'כתובת אימייל (לאימות)', continueVerify:'המשך — אימות אימייל',
+    firstName:'שם פרטי', lastName:'שם משפחה', aptNumber:'מספר דירה',
+    phoneNumber:'מספר טלפון', emailVer:'כתובת אימייל (לאימות)',
+    continueVerify:'המשך — אימות אימייל',
     verifyEmail:'אימות אימייל', verifyPhone:'אימות טלפון',
     weSentCode:'שלחנו קוד בן 4 ספרות ל', checkEmail:'📧 בדוק את האימייל שלך',
     enterCode:'הכנס את הקוד', verify:'אמת',
@@ -470,8 +472,9 @@ const LANGS = {
     phoneVerified:'Téléphone vérifié! Choisissez un PIN à 4 chiffres.',
     choosePin:'Choisir un PIN', confirmRegPin:'Confirmer le PIN',
     submitReg:"Soumettre l'inscription", backToSignIn:'Retour à la connexion',
-    firstName:'Prénom', lastName:'Nom de famille', apt:"Numéro d'appartement",
-    email:'Adresse e-mail (pour vérification)', continueVerify:"Continuer — vérifier l'e-mail",
+    firstName:'Prénom', lastName:'Nom de famille', aptNumber:"Numéro d'appartement",
+    phoneNumber:'Numéro de téléphone', emailVer:'Adresse e-mail (pour vérification)',
+    continueVerify:"Continuer — vérifier l'e-mail",
     verifyEmail:"Vérifier l'e-mail", verifyPhone:'Vérifier le téléphone',
     weSentCode:'Nous avons envoyé un code à', checkEmail:'📧 Vérifiez votre e-mail',
     enterCode:'Entrez le code à 4 chiffres', verify:'Vérifier',
@@ -546,6 +549,9 @@ function applyLang(){
     'lbl-enter-pin':'enterPin','lbl-signing-as':'signingInAs',
     'lbl-pin':'pin','btn-signin':'signIn',
     'lbl-step1':'step1','lbl-step2':'step2','lbl-step3':'step3',
+    'lbl-fname':'firstName','lbl-lname':'lastName',
+    'lbl-apt-num':'aptNumber','lbl-phone-num':'phoneNumber',
+    'lbl-email-ver':'emailVer','btn-continue-verify':'continueVerify',
     'lbl-we-sent':'weSentCode','lbl-check-email':'checkEmail',
     'lbl-enter-code':'enterCode','btn-verify':'verify',
     'lbl-phone-verified':'phoneVerified',
