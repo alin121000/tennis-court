@@ -6,73 +6,168 @@
 <title>Court Booking</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f3;color:#1a1a1a;min-height:100vh;font-size:16px;}
-.screen{display:none;padding:1.25rem 1rem;max-width:520px;margin:0 auto;}
+:root{
+  --bg:#F2F2F7;
+  --bg2:#FFFFFF;
+  --bg3:#F2F2F7;
+  --surface:#FFFFFF;
+  --border:rgba(0,0,0,0.08);
+  --border2:rgba(0,0,0,0.12);
+  --text1:#000000;
+  --text2:#3C3C43;
+  --text3:#8E8E93;
+  --accent:#007AFF;
+  --accent-light:#EAF3FF;
+  --green:#34C759;
+  --green-light:#E8F9ED;
+  --red:#FF3B30;
+  --red-light:#FFF0EF;
+  --orange:#FF9500;
+  --orange-light:#FFF5E6;
+  --radius-sm:10px;
+  --radius-md:14px;
+  --radius-lg:18px;
+  --shadow-sm:0 1px 3px rgba(0,0,0,0.06),0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md:0 4px 16px rgba(0,0,0,0.08),0 2px 6px rgba(0,0,0,0.04);
+}
+@media(prefers-color-scheme:dark){
+  :root{
+    --bg:#000000;--bg2:#1C1C1E;--bg3:#2C2C2E;
+    --surface:#1C1C1E;--border:rgba(255,255,255,0.1);--border2:rgba(255,255,255,0.15);
+    --text1:#FFFFFF;--text2:#EBEBF5;--text3:#8E8E93;
+    --accent-light:rgba(0,122,255,0.15);--green-light:rgba(52,199,89,0.15);
+    --red-light:rgba(255,59,48,0.15);--orange-light:rgba(255,149,0,0.15);
+    --shadow-sm:none;--shadow-md:none;
+  }
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',sans-serif;background:var(--bg);color:var(--text1);min-height:100vh;font-size:16px;-webkit-font-smoothing:antialiased;}
+.screen{display:none;padding:0 0 2rem;max-width:480px;margin:0 auto;}
 .screen.active{display:block;}
-.card{background:#fff;border:0.5px solid rgba(0,0,0,0.1);border-radius:12px;padding:1.25rem;margin-bottom:1rem;}
-.badge{display:inline-block;font-size:12px;padding:4px 10px;border-radius:6px;font-weight:500;}
-.badge-pending{background:#FAEEDA;color:#854F0B;}
-.badge-approved{background:#EAF3DE;color:#3B6D11;}
-.badge-booked{background:#FCEBEB;color:#A32D2D;}
-.badge-mine{background:#EAF3DE;color:#0F6E56;}
-.badge-free{background:#F1EFE8;color:#5F5E5A;}
-.badge-disabled{background:#F1EFE8;color:#888;}
-.slot-row{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:0.5px solid rgba(0,0,0,0.07);}
+
+/* Cards */
+.card{background:var(--surface);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1rem;box-shadow:var(--shadow-sm);}
+.card-inset{background:var(--bg3);border-radius:var(--radius-md);padding:1rem;margin-bottom:1rem;}
+
+/* Section headers */
+.section-header{padding:0 1rem;margin-top:1.5rem;margin-bottom:0.4rem;}
+.section-header h3{font-size:13px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.04em;}
+.list-card{background:var(--surface);border-radius:var(--radius-lg);margin:0 0 1rem;box-shadow:var(--shadow-sm);overflow:hidden;}
+
+/* Badges */
+.badge{display:inline-flex;align-items:center;font-size:12px;padding:3px 10px;border-radius:20px;font-weight:500;}
+.badge-pending{background:var(--orange-light);color:var(--orange);}
+.badge-approved{background:var(--green-light);color:var(--green);}
+.badge-booked{background:var(--red-light);color:var(--red);}
+.badge-mine{background:var(--green-light);color:var(--green);}
+.badge-free{background:var(--bg3);color:var(--text3);}
+.badge-disabled{background:var(--bg3);color:var(--text3);}
+
+/* Slot rows */
+.slot-row{display:flex;align-items:center;gap:10px;padding:13px 1rem;border-bottom:0.5px solid var(--border);transition:background 0.15s;}
 .slot-row:last-child{border-bottom:none;}
-.slot-time{font-size:14px;font-weight:500;min-width:110px;direction:ltr;unicode-bidi:embed;}
-.top-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;}
-.tab-bar{display:flex;gap:5px;margin-bottom:1.25rem;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.slot-row:active{background:var(--bg3);}
+.slot-time{font-size:15px;font-weight:500;min-width:115px;color:var(--text1);direction:ltr;unicode-bidi:embed;}
+.slot-name{flex:1;font-size:15px;color:var(--text2);}
+
+/* Top bar */
+.top-bar{display:flex;align-items:center;justify-content:space-between;padding:1rem 1rem 0;}
+
+/* Tab bar — iOS style segmented */
+.tab-bar-wrap{padding:0.75rem 1rem;background:var(--bg);position:sticky;top:0;z-index:10;-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);}
+.tab-bar{display:flex;gap:5px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;background:var(--bg3);border-radius:var(--radius-sm);padding:3px;}
 .tab-bar::-webkit-scrollbar{display:none;}
-.tab{flex:1;padding:8px 4px;font-size:13px;border:0.5px solid rgba(0,0,0,0.15);border-radius:8px;background:transparent;cursor:pointer;color:#666;white-space:nowrap;}
-.tab.active{background:#eee;color:#111;font-weight:500;}
-.date-nav{display:flex;align-items:center;gap:8px;margin-bottom:1rem;}
-.date-nav button{background:none;border:0.5px solid rgba(0,0,0,0.15);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:16px;color:#1a1a1a;}
-.date-nav button:disabled{opacity:0.3;cursor:default;}
-.date-label{font-size:15px;font-weight:500;flex:1;text-align:center;}
-.book-btn{font-size:13px;padding:6px 14px;border-radius:8px;border:0.5px solid rgba(0,0,0,0.15);background:transparent;cursor:pointer;}
-.book-btn:hover{background:#f0f0f0;}
-.cancel-btn{font-size:13px;padding:5px 10px;border-radius:8px;border:0.5px solid rgba(240,149,149,0.5);background:transparent;cursor:pointer;color:#A32D2D;}
-.cancel-btn:hover{background:#FCEBEB;}
-.approve-btn{font-size:13px;padding:5px 12px;border-radius:8px;border:none;background:#EAF3DE;cursor:pointer;color:#3B6D11;}
-.deny-btn{font-size:13px;padding:5px 12px;border-radius:8px;border:none;background:#FCEBEB;cursor:pointer;color:#A32D2D;}
-.msg{font-size:14px;padding:10px 14px;border-radius:8px;margin-bottom:10px;}
-.msg-success{background:#EAF3DE;color:#3B6D11;}
-.msg-error{background:#FCEBEB;color:#A32D2D;}
-.msg-info{background:#E6F1FB;color:#185FA5;}
-.msg-warn{background:#FAEEDA;color:#854F0B;}
-label{font-size:14px;color:#555;display:block;margin-bottom:4px;margin-top:12px;}
-input{width:100%;padding:10px 14px;border:0.5px solid rgba(0,0,0,0.2);border-radius:8px;font-size:16px;background:#fff;color:#1a1a1a;}
-input:focus{outline:none;border-color:#378ADD;}
-.avatar{width:32px;height:32px;border-radius:50%;background:#E6F1FB;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;color:#185FA5;flex-shrink:0;}
-.sms-box{background:#F1EFE8;border-radius:8px;padding:12px 14px;margin:12px 0;font-size:14px;line-height:1.5;}
-.stat-bar-wrap{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
-.stat-bar-bg{flex:1;height:10px;background:#eee;border-radius:5px;overflow:hidden;}
-.stat-bar-fill{height:10px;border-radius:5px;background:#378ADD;}
-.section-title{font-size:15px;font-weight:500;margin-bottom:10px;}
-.metric-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:1rem;}
-.metric-card{background:#f0f0ee;border-radius:8px;padding:10px 12px;text-align:center;}
-.metric-val{font-size:22px;font-weight:500;}
-.metric-lbl{font-size:12px;color:#666;margin-top:2px;}
-.notif-dot{width:8px;height:8px;border-radius:50%;background:#E24B4A;display:inline-block;margin-left:4px;vertical-align:middle;}
-.notif-item{display:flex;align-items:flex-start;gap:10px;padding:12px 8px;border-bottom:0.5px solid rgba(0,0,0,0.07);border-radius:8px;transition:background 0.15s;}
+.tab{flex:1;padding:7px 8px;font-size:12px;font-weight:500;border:none;border-radius:8px;background:transparent;cursor:pointer;color:var(--text3);white-space:nowrap;transition:all 0.2s;}
+.tab.active{background:var(--surface);color:var(--text1);font-weight:600;box-shadow:var(--shadow-sm);}
+
+/* Date nav */
+.date-nav{display:flex;align-items:center;gap:8px;padding:0.75rem 1rem;}
+.date-nav button{background:var(--bg3);border:none;border-radius:50%;width:34px;height:34px;cursor:pointer;font-size:16px;color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:600;transition:opacity 0.15s;}
+.date-nav button:disabled{opacity:0.25;cursor:default;}
+.date-label{font-size:17px;font-weight:600;flex:1;text-align:center;color:var(--text1);}
+
+/* Buttons */
+.btn-primary{width:100%;padding:15px;border-radius:var(--radius-md);border:none;background:var(--accent);color:#fff;font-size:17px;font-weight:600;cursor:pointer;transition:opacity 0.15s;letter-spacing:-0.01em;}
+.btn-primary:active{opacity:0.8;}
+.btn-secondary{width:100%;padding:15px;border-radius:var(--radius-md);border:none;background:var(--bg3);color:var(--accent);font-size:17px;font-weight:600;cursor:pointer;transition:opacity 0.15s;}
+.btn-secondary:active{opacity:0.7;}
+.book-btn{font-size:15px;font-weight:600;padding:6px 16px;border-radius:20px;border:none;background:var(--accent);color:#fff;cursor:pointer;transition:opacity 0.15s;white-space:nowrap;}
+.book-btn:active{opacity:0.7;}
+.cancel-btn{font-size:14px;font-weight:500;padding:6px 14px;border-radius:20px;border:none;background:var(--red-light);color:var(--red);cursor:pointer;transition:opacity 0.15s;}
+.cancel-btn:active{opacity:0.7;}
+.approve-btn{font-size:14px;font-weight:500;padding:6px 14px;border-radius:20px;border:none;background:var(--green-light);color:var(--green);cursor:pointer;}
+.deny-btn{font-size:14px;font-weight:500;padding:6px 14px;border-radius:20px;border:none;background:var(--red-light);color:var(--red);cursor:pointer;}
+
+/* Messages */
+.msg{font-size:14px;padding:12px 14px;border-radius:var(--radius-sm);margin-bottom:10px;line-height:1.4;}
+.msg-success{background:var(--green-light);color:var(--green);}
+.msg-error{background:var(--red-light);color:var(--red);}
+.msg-info{background:var(--accent-light);color:var(--accent);}
+.msg-warn{background:var(--orange-light);color:var(--orange);}
+
+/* Forms */
+label{font-size:13px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.03em;display:block;margin-bottom:6px;margin-top:16px;}
+input{width:100%;padding:13px 14px;border:1.5px solid var(--border2);border-radius:var(--radius-sm);font-size:16px;background:var(--surface);color:var(--text1);transition:border-color 0.2s;}
+input:focus{outline:none;border-color:var(--accent);}
+
+/* Avatar */
+.avatar{border-radius:50%;background:var(--accent-light);display:flex;align-items:center;justify-content:center;font-weight:600;color:var(--accent);flex-shrink:0;}
+
+/* Info box */
+.sms-box{background:var(--bg3);border-radius:var(--radius-sm);padding:12px 14px;margin:12px 0;font-size:14px;line-height:1.5;color:var(--text2);}
+
+/* Stats */
+.stat-bar-wrap{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.stat-bar-bg{flex:1;height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;}
+.stat-bar-fill{height:6px;border-radius:3px;background:var(--accent);}
+.section-title{font-size:17px;font-weight:600;margin-bottom:12px;color:var(--text1);}
+.metric-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:1rem;}
+.metric-card{background:var(--surface);border-radius:var(--radius-md);padding:14px 12px;text-align:center;box-shadow:var(--shadow-sm);}
+.metric-val{font-size:28px;font-weight:700;color:var(--text1);letter-spacing:-0.02em;}
+.metric-lbl{font-size:12px;color:var(--text3);margin-top:4px;font-weight:500;}
+
+/* Notifications */
+.notif-dot{width:8px;height:8px;border-radius:50%;background:var(--red);display:inline-block;margin-left:4px;vertical-align:middle;}
+.notif-item{display:flex;align-items:flex-start;gap:12px;padding:14px 1rem;border-bottom:0.5px solid var(--border);transition:background 0.15s;}
 .notif-item:last-child{border-bottom:none;}
 .notif-item.clickable{cursor:pointer;}
-.notif-item.clickable:hover{background:#f5f5f3;}
-.notif-item.unread{background:#f0f4ff;}
-.notif-icon{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
-.notif-icon.reg{background:#FAEEDA;}
-.notif-icon.book{background:#E6F1FB;}
+.notif-item.clickable:active{background:var(--bg3);}
+.notif-item.unread{background:var(--accent-light);}
+.notif-icon{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.notif-icon.reg{background:var(--orange-light);}
+.notif-icon.book{background:var(--accent-light);}
 .bell-wrap{position:relative;display:inline-flex;align-items:center;}
-.bell-badge{position:absolute;top:-4px;right:-4px;background:#E24B4A;color:white;border-radius:50%;width:16px;height:16px;font-size:10px;display:flex;align-items:center;justify-content:center;font-weight:500;}
+.bell-badge{position:absolute;top:-5px;right:-5px;background:var(--red);color:white;border-radius:50%;width:18px;height:18px;font-size:11px;display:flex;align-items:center;justify-content:center;font-weight:700;border:2px solid var(--bg);}
+
+/* Language picker */
 .lang-picker{position:relative;display:inline-block;}
-.lang-dropdown{position:absolute;top:36px;right:0;background:#fff;border:0.5px solid rgba(0,0,0,0.15);border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,0.12);z-index:100;overflow:hidden;min-width:130px;}
-.lang-option{display:flex;align-items:center;gap:8px;padding:10px 14px;cursor:pointer;font-size:14px;}
-.lang-option:hover{background:#f5f5f3;}
-.lang-option.active{font-weight:600;background:#f0f0ee;}
-.spinner{display:inline-block;width:16px;height:16px;border:2px solid #ccc;border-top-color:#378ADD;border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;margin-right:6px;}
-@keyframes spin{to{transform:rotate(360deg);}}
-.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;z-index:999;opacity:0;transition:opacity 0.3s;pointer-events:none;}
+.lang-dropdown{position:absolute;top:42px;right:0;background:var(--surface);border-radius:var(--radius-md);box-shadow:var(--shadow-md);z-index:100;overflow:hidden;min-width:150px;border:0.5px solid var(--border);}
+.lang-option{display:flex;align-items:center;gap:10px;padding:13px 16px;cursor:pointer;font-size:15px;color:var(--text1);border-bottom:0.5px solid var(--border);}
+.lang-option:last-child{border-bottom:none;}
+.lang-option:active{background:var(--bg3);}
+.lang-option.active{font-weight:600;color:var(--accent);}
+
+/* Toast */
+.toast{position:fixed;bottom:32px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.82);backdrop-filter:blur(12px);color:#fff;padding:12px 22px;border-radius:22px;font-size:14px;font-weight:500;z-index:999;opacity:0;transition:opacity 0.25s;pointer-events:none;white-space:nowrap;}
 .toast.show{opacity:1;}
+
+/* Page padding */
+.page-pad{padding:0 1rem;}
+
+/* Divider rows in list */
+.list-row{display:flex;align-items:center;gap:12px;padding:13px 1rem;border-bottom:0.5px solid var(--border);}
+.list-row:last-child{border-bottom:none;}
+
+/* Screen header */
+.screen-header{padding:1rem 1rem 0;display:flex;align-items:center;gap:12px;}
+.screen-title{font-size:22px;font-weight:700;letter-spacing:-0.02em;}
+
+/* Profile rows */
+.profile-row{display:flex;align-items:center;justify-content:space-between;padding:13px 1rem;border-bottom:0.5px solid var(--border);}
+.profile-row:last-child{border-bottom:none;}
+.profile-label{font-size:15px;color:var(--text1);}
+.profile-value{font-size:15px;color:var(--text3);}
+
+@keyframes spin{to{transform:rotate(360deg);}}
 </style>
 </head>
 <body>
@@ -81,10 +176,13 @@ input:focus{outline:none;border-color:#378ADD;}
 
 <!-- LOGIN STEP 1 -->
 <div id="screen-login" class="screen active">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-top:1rem;margin-bottom:4px;">
-    <p style="font-size:22px;font-weight:500;" id="login-title">Court booking</p>
-    <div class="lang-picker">
-      <button onclick="toggleLangMenu()" style="background:none;border:none;cursor:pointer;font-size:22px;padding:4px;" title="Language">🌐</button>
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;padding:2rem 1rem 0;">
+    <div>
+      <p style="font-size:30px;font-weight:700;letter-spacing:-0.03em;line-height:1.1;color:var(--text1);" id="login-title">Court booking</p>
+      <p style="font-size:15px;color:var(--text3);margin-top:6px;" id="login-sub">Building tennis court reservations</p>
+    </div>
+    <div class="lang-picker" style="margin-top:4px;">
+      <button onclick="toggleLangMenu()" style="background:var(--bg3);border:none;cursor:pointer;font-size:18px;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;" title="Language">🌐</button>
       <div class="lang-dropdown" id="lang-dropdown" style="display:none;">
         <div class="lang-option" onclick="setLang('en')">🇬🇧 English</div>
         <div class="lang-option" onclick="setLang('he')">🇮🇱 עברית</div>
@@ -92,31 +190,87 @@ input:focus{outline:none;border-color:#378ADD;}
       </div>
     </div>
   </div>
-  <p style="font-size:14px;color:#666;margin-bottom:1.25rem;" id="login-sub">Building tennis court reservations</p>
-  <div class="card">
-    <label id="lbl-phone">Phone number</label>
-    <input type="tel" id="login-phone" placeholder="050 1234567" oninput="fmtPhone(this)"/>
-    <div id="login-msg"></div>
-    <button style="margin-top:14px;width:100%;padding:10px;border-radius:8px;border:none;background:#1a1a1a;color:#fff;font-size:15px;cursor:pointer;" onclick="doLoginStep1()" id="btn-continue">Continue</button>
-    <div style="text-align:center;margin-top:12px;">
-      <span style="font-size:14px;color:#666;" id="lbl-new-tenant">New tenant? </span>
-      <button onclick="showScreen('screen-reg1')" style="font-size:14px;background:none;border:none;cursor:pointer;color:#185FA5;text-decoration:underline;" id="btn-register">Register</button>
+  <div style="padding:1.5rem 1rem 0;">
+    <div style="background:var(--surface);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-sm);margin-bottom:1rem;">
+      <div style="padding:1rem 1rem 0.5rem;">
+        <label id="lbl-phone" style="margin-top:0;">Phone number</label>
+        <input type="tel" id="login-phone" placeholder="050 1234567" oninput="fmtPhone(this)"/>
+      </div>
+      <div id="login-msg" style="padding:0 1rem;"></div>
+      <div style="padding:0.75rem 1rem 1rem;">
+        <button class="btn-primary" onclick="doLoginStep1()" id="btn-continue">Continue</button>
+      </div>
+    </div>
+    <div style="text-align:center;">
+      <span style="font-size:15px;color:var(--text3);" id="lbl-new-tenant">New tenant? </span>
+      <button onclick="showScreen('screen-reg1')" style="font-size:15px;background:none;border:none;cursor:pointer;color:var(--accent);font-weight:600;" id="btn-register">Register</button>
     </div>
   </div>
 </div>
 
 <!-- LOGIN STEP 2: PIN -->
 <div id="screen-login2" class="screen">
-  <div style="display:flex;align-items:center;gap:10px;margin-bottom:1.25rem;margin-top:1rem;">
-    <button id="back-login2" onclick="showScreen('screen-login')" style="background:none;border:none;cursor:pointer;font-size:20px;color:#888;">&#8592;</button>
-    <p style="font-size:17px;font-weight:500;" id="lbl-enter-pin">Enter your PIN</p>
+  <div style="padding:1.5rem 1rem 0;">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:1.5rem;">
+      <button id="back-login2" onclick="showScreen('screen-login')" style="background:var(--bg3);border:none;cursor:pointer;font-size:16px;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--accent);">←</button>
+      <p style="font-size:22px;font-weight:700;letter-spacing:-0.02em;" id="lbl-enter-pin">Enter your PIN</p>
+    </div>
+    <div style="background:var(--surface);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-sm);">
+      <div style="padding:1rem 1rem 0.5rem;">
+        <p style="font-size:15px;color:var(--text3);margin-bottom:12px;"><span id="lbl-signing-as">Signing in as</span> <strong id="login2-name" style="color:var(--text1);"></strong></p>
+        <label id="lbl-pin" style="margin-top:0;">PIN</label>
+        <input type="password" id="login-pin" maxlength="4" placeholder="••••" style="letter-spacing:10px;font-size:28px;text-align:center;border:none;border-bottom:1.5px solid var(--border2);border-radius:0;padding:12px 0;background:transparent;" oninput="if(this.value.length===4)doLoginStep2()"/>
+      </div>
+      <div id="login2-msg" style="padding:0 1rem;"></div>
+      <div style="padding:0.75rem 1rem 1rem;">
+        <button class="btn-primary" onclick="doLoginStep2()" id="btn-signin">Sign in</button>
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:1rem;">
+      <button onclick="showScreen('screen-forgot')" style="font-size:15px;background:none;border:none;cursor:pointer;color:var(--accent);" id="btn-forgot-pin">Forgot PIN?</button>
+    </div>
   </div>
-  <div class="card">
-    <p style="font-size:13px;color:#666;margin-bottom:4px;"><span id="lbl-signing-as">Signing in as</span> <strong id="login2-name"></strong></p>
-    <label id="lbl-pin">PIN</label>
-    <input type="password" id="login-pin" maxlength="4" placeholder="••••" style="letter-spacing:8px;font-size:22px;text-align:center;" oninput="if(this.value.length===4)doLoginStep2()"/>
-    <div id="login2-msg"></div>
-    <button style="margin-top:14px;width:100%;padding:10px;border-radius:8px;border:none;background:#1a1a1a;color:#fff;font-size:15px;cursor:pointer;" onclick="doLoginStep2()" id="btn-signin">Sign in</button>
+</div>
+
+<!-- FORGOT PIN STEP 1: enter phone -->
+<div id="screen-forgot" class="screen">
+  <div style="padding:1.5rem 1rem 0;">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:1.5rem;">
+      <button id="back-forgot" onclick="showScreen('screen-login')" style="background:var(--bg3);border:none;cursor:pointer;font-size:16px;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--accent);">←</button>
+      <p style="font-size:22px;font-weight:700;letter-spacing:-0.02em;" id="lbl-forgot-title">Reset your PIN</p>
+    </div>
+    <p style="font-size:15px;color:var(--text3);margin-bottom:1.25rem;" id="lbl-forgot-sub">Enter your phone number and we'll send a reset code to your email.</p>
+    <div style="background:var(--surface);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-sm);">
+      <div style="padding:1rem 1rem 0.5rem;">
+        <label id="lbl-forgot-phone" style="margin-top:0;">Phone number</label>
+        <input type="tel" id="forgot-phone" placeholder="050 1234567" oninput="fmtPhone(this)" style="border:none;border-bottom:1.5px solid var(--border2);border-radius:0;padding:10px 0;background:transparent;"/>
+      </div>
+      <div id="forgot-msg" style="padding:0 1rem;"></div>
+      <div style="padding:0.75rem 1rem 1rem;">
+        <button class="btn-primary" onclick="doForgotPin()" id="btn-send-reset">Send reset code</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FORGOT PIN STEP 2: enter code + new PIN -->
+<div id="screen-reset" class="screen">
+  <div style="padding:1.5rem 1rem 0;">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:1rem;">
+      <button id="back-reset" onclick="showScreen('screen-forgot')" style="background:var(--bg3);border:none;cursor:pointer;font-size:16px;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--accent);">←</button>
+      <p style="font-size:22px;font-weight:700;letter-spacing:-0.02em;" id="lbl-reset-title">Reset your PIN</p>
+    </div>
+    <p style="font-size:15px;color:var(--text3);margin-bottom:1.25rem;"><span id="lbl-code-sent-to">Code sent to</span> <strong id="reset-email-masked" style="color:var(--text1);"></strong></p>
+    <div style="background:var(--surface);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-sm);padding:1rem;">
+      <label id="lbl-enter-reset-code" style="margin-top:0;">Reset code</label>
+      <input type="text" id="reset-code" maxlength="4" placeholder="3847" inputmode="numeric" style="letter-spacing:10px;font-size:28px;text-align:center;margin-bottom:4px;"/>
+      <label id="lbl-new-pin-reset">New PIN</label>
+      <input type="password" id="reset-pin" maxlength="4" placeholder="••••" style="letter-spacing:10px;font-size:28px;text-align:center;margin-bottom:4px;" oninput="if(this.value.length===4)document.getElementById('reset-pin2').focus()"/>
+      <label id="lbl-confirm-pin-reset">Confirm new PIN</label>
+      <input type="password" id="reset-pin2" maxlength="4" placeholder="••••" style="letter-spacing:10px;font-size:28px;text-align:center;"/>
+      <div id="reset-msg" style="margin-top:12px;"></div>
+      <button class="btn-primary" onclick="doResetPin()" style="margin-top:14px;" id="btn-reset-pin">Reset PIN</button>
+    </div>
   </div>
 </div>
 
@@ -201,34 +355,34 @@ input:focus{outline:none;border-color:#378ADD;}
 
 <!-- MAIN APP -->
 <div id="screen-app" class="screen">
-  <div class="top-bar" style="margin-top:0.5rem;flex-wrap:wrap;gap:8px;">
-    <div style="display:flex;align-items:center;gap:10px;min-width:0;flex:1;">
-      <div class="avatar" id="user-avatar" style="width:36px;height:36px;font-size:12px;flex-shrink:0;"></div>
+  <div class="top-bar" style="padding:1rem 1rem 0.75rem;flex-wrap:wrap;gap:8px;">
+    <div style="display:flex;align-items:center;gap:12px;min-width:0;flex:1;">
+      <div class="avatar" id="user-avatar" style="width:42px;height:42px;font-size:14px;flex-shrink:0;"></div>
       <div style="min-width:0;">
-        <p id="user-label" style="font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></p>
-        <p id="user-apt" style="font-size:12px;color:#666;"></p>
+        <p id="user-label" style="font-size:16px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text1);"></p>
+        <p id="user-apt" style="font-size:13px;color:var(--text3);"></p>
       </div>
     </div>
-    <div style="display:flex;align-items:center;gap:8px;">
+    <div style="display:flex;align-items:center;gap:6px;">
       <div class="lang-picker">
-        <button onclick="toggleLangMenu()" style="background:none;border:none;cursor:pointer;font-size:20px;padding:4px;" title="Language">🌐</button>
+        <button onclick="toggleLangMenu()" style="background:var(--bg3);border:none;cursor:pointer;font-size:16px;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;" title="Language">🌐</button>
         <div class="lang-dropdown" id="lang-dropdown-app" style="display:none;">
           <div class="lang-option" onclick="setLang('en')">🇬🇧 English</div>
           <div class="lang-option" onclick="setLang('he')">🇮🇱 עברית</div>
           <div class="lang-option" onclick="setLang('fr')">🇫🇷 Français</div>
         </div>
       </div>
-      <button id="notif-btn" style="display:none;background:none;border:none;cursor:pointer;padding:4px;" onclick="showTab('notifications')">
+      <button id="notif-btn" style="display:none;background:var(--bg3);border:none;cursor:pointer;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;" onclick="showTab('notifications')">
         <div class="bell-wrap">
-          <span style="font-size:20px;">🔔</span>
+          <span style="font-size:17px;">🔔</span>
           <span class="bell-badge" id="notif-count" style="display:none;">0</span>
         </div>
       </button>
-      <button onclick="doLogout()" style="font-size:13px;padding:5px 12px;border-radius:8px;border:0.5px solid rgba(0,0,0,0.15);background:transparent;cursor:pointer;" id="btn-signout">Sign out</button>
+      <button onclick="doLogout()" style="font-size:14px;padding:7px 14px;border-radius:20px;border:none;background:var(--bg3);color:var(--text2);cursor:pointer;font-weight:500;" id="btn-signout">Sign out</button>
     </div>
   </div>
-
-  <div class="tab-bar" id="user-tabs">
+  <div class="tab-bar-wrap">
+    <div class="tab-bar" id="user-tabs">
     <button class="tab active" data-tab="book" onclick="showTab('book')">Book</button>
     <button class="tab" data-tab="my" onclick="showTab('my')">My bookings</button>
     <button class="tab" data-tab="profile" onclick="showTab('profile')">Profile</button>
@@ -243,53 +397,62 @@ input:focus{outline:none;border-color:#378ADD;}
     <button class="tab" data-tab="notifications" id="notif-tab" onclick="showTab('notifications')">Alerts <span id="notif-tab-dot" style="display:none;" class="notif-dot"></span></button>
     <button class="tab" data-tab="profile" onclick="showTab('profile')">Profile</button>
   </div>
+  </div><!-- end tab-bar-wrap -->
 
   <!-- PROFILE (all users) -->
   <div id="tab-profile" style="display:none;">
-
-    <!-- info view -->
-    <div id="profile-view">
-      <div class="card">
-        <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
-          <div class="avatar" id="profile-avatar" style="width:52px;height:52px;font-size:16px;"></div>
-          <div>
-            <p style="font-size:16px;font-weight:500;" id="profile-name"></p>
-            <p style="font-size:12px;color:#888;">Tenant</p>
-          </div>
+    <div id="profile-view" style="padding:0 1rem;">
+      <div style="display:flex;align-items:center;gap:16px;padding:1.5rem 0 1rem;">
+        <div class="avatar" id="profile-avatar" style="width:64px;height:64px;font-size:22px;flex-shrink:0;"></div>
+        <div>
+          <p style="font-size:20px;font-weight:700;letter-spacing:-0.02em;color:var(--text1);" id="profile-name"></p>
+          <p style="font-size:14px;color:var(--text3);margin-top:2px;" id="profile-role">Tenant</p>
         </div>
-        <div style="border-top:0.5px solid rgba(0,0,0,0.07);padding-top:12px;">
-          <div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:0.5px solid rgba(0,0,0,0.05);">
-            <span style="font-size:13px;color:#888;" id="lbl-apt">Apartment</span>
+      </div>
+      <div class="list-card">
+        <div class="profile-row">
+          <span class="profile-label" id="lbl-apt">Apartment</span>
+          <span class="profile-value" id="profile-apt"></span>
+        </div>
+        <div class="profile-row">
+          <span class="profile-label" id="lbl-profile-phone">Phone</span>
+          <span class="profile-value" id="profile-phone"></span>
+        </div>
+        <div class="profile-row">
+          <span class="profile-label" id="lbl-profile-email">Email</span>
+          <span class="profile-value" id="profile-email"></span>
+        </div>
+      </div>
+      <button class="btn-secondary" onclick="showPinForm()" id="btn-change-pin" style="margin-top:0.5rem;">Change PIN</button>
+    </div>
             <span style="font-size:13px;font-weight:500;" id="profile-apt"></span>
           </div>
           <div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:0.5px solid rgba(0,0,0,0.05);">
-            <span style="font-size:13px;color:#888;" id="lbl-profile-phone">Phone</span>
-            <span style="font-size:13px;font-weight:500;" id="profile-phone"></span>
+            <span style="font-size:13px;color:#888;" id="lbl-profile-phone" style="display:none;"></span>
+            <span style="font-size:13px;font-weight:500;" id="profile-phone" style="display:none;"></span>
           </div>
           <div style="display:flex;justify-content:space-between;padding:9px 0;">
-            <span style="font-size:13px;color:#888;" id="lbl-profile-email">Email</span>
-            <span style="font-size:13px;font-weight:500;" id="profile-email"></span>
+            <span style="font-size:13px;color:#888;" id="lbl-profile-email" style="display:none;"></span>
+            <span style="font-size:13px;font-weight:500;" id="profile-email" style="display:none;"></span>
           </div>
         </div>
       </div>
-      <button id="btn-change-pin" style="width:100%;padding:10px;border-radius:8px;border:0.5px solid rgba(0,0,0,0.15);background:transparent;font-size:14px;cursor:pointer;" onclick="showPinForm()">Change PIN</button>
-    </div>
 
     <!-- change PIN form (hidden by default) -->
-    <div id="profile-pin-form" style="display:none;">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:1.25rem;">
-        <button onclick="hidePinForm()" style="background:none;border:none;cursor:pointer;font-size:20px;color:#888;">&#8592;</button>
-        <p style="font-size:16px;font-weight:500;">Change PIN</p>
+    <div id="profile-pin-form" style="display:none;padding:0 1rem;">
+      <div style="display:flex;align-items:center;gap:12px;padding:1rem 0;">
+        <button id="back-pin" onclick="hidePinForm()" style="background:var(--bg3);border:none;cursor:pointer;font-size:16px;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--accent);">←</button>
+        <p style="font-size:20px;font-weight:700;letter-spacing:-0.02em;" id="lbl-change-pin-title">Change PIN</p>
       </div>
-      <div class="card">
-        <label id="lbl-current-pin">Current PIN</label>
-        <input type="password" id="pin-current" maxlength="4" placeholder="••••" style="letter-spacing:6px;font-size:20px;text-align:center;"/>
+      <div class="list-card" style="padding:0 1rem;">
+        <label id="lbl-current-pin" style="padding-top:12px;">Current PIN</label>
+        <input type="password" id="pin-current" maxlength="4" placeholder="••••" style="letter-spacing:8px;font-size:22px;text-align:center;border:none;border-bottom:1.5px solid var(--border2);border-radius:0;padding:10px 0;background:transparent;margin-bottom:4px;"/>
         <label id="lbl-new-pin">New PIN</label>
-        <input type="password" id="pin-new" maxlength="4" placeholder="••••" style="letter-spacing:6px;font-size:20px;text-align:center;"/>
+        <input type="password" id="pin-new" maxlength="4" placeholder="••••" style="letter-spacing:8px;font-size:22px;text-align:center;border:none;border-bottom:1.5px solid var(--border2);border-radius:0;padding:10px 0;background:transparent;margin-bottom:4px;"/>
         <label id="lbl-confirm-pin">Confirm new PIN</label>
-        <input type="password" id="pin-confirm" maxlength="4" placeholder="••••" style="letter-spacing:6px;font-size:20px;text-align:center;"/>
-        <div id="pin-msg" style="margin-top:10px;"></div>
-        <button id="btn-update-pin" style="margin-top:14px;width:100%;padding:10px;border-radius:8px;border:none;background:#1a1a1a;color:#fff;font-size:15px;cursor:pointer;" onclick="changePin()">Update PIN</button>
+        <input type="password" id="pin-confirm" maxlength="4" placeholder="••••" style="letter-spacing:8px;font-size:22px;text-align:center;border:none;border-bottom:1.5px solid var(--border2);border-radius:0;padding:10px 0;background:transparent;margin-bottom:12px;"/>
+        <div id="pin-msg" style="margin-bottom:8px;"></div>
+        <button id="btn-update-pin" class="btn-primary" style="margin-bottom:1rem;" onclick="changePin()">Update PIN</button>
       </div>
     </div>
 
@@ -302,10 +465,12 @@ input:focus{outline:none;border-color:#378ADD;}
       <span class="date-label" id="date-label"></span>
       <button id="day-next-btn" onclick="changeDay(1)">&#8594;</button>
     </div>
-    <div id="msg-book"></div>
-    <div id="limit-banner"></div>
-    <div id="future-banner"></div>
-    <div class="card" style="padding:1rem;"><div id="slots-list"></div></div>
+    <div style="padding:0 1rem;">
+      <div id="msg-book"></div>
+      <div id="limit-banner"></div>
+      <div id="future-banner"></div>
+    </div>
+    <div class="list-card" style="margin:0 1rem 1rem;"><div id="slots-list"></div></div>
   </div>
 
   <!-- SCHEDULE (admin) -->
@@ -315,39 +480,39 @@ input:focus{outline:none;border-color:#378ADD;}
       <span class="date-label" id="sched-date-label"></span>
       <button id="sched-next-btn" onclick="changeSchedDay(1)">&#8594;</button>
     </div>
-    <div class="card" style="padding:1rem;"><div id="sched-list"></div></div>
+    <div class="list-card" style="margin:0 1rem 1rem;"><div id="sched-list"></div></div>
   </div>
 
   <!-- MY BOOKINGS -->
-  <div id="tab-my" style="display:none;"><div id="my-bookings-list"></div></div>
+  <div id="tab-my" style="display:none;"><div id="my-bookings-list" style="padding:0 1rem;"></div></div>
 
   <!-- TENANTS (admin) -->
-  <div id="tab-tenants" style="display:none;"><div id="tenants-list"></div></div>
+  <div id="tab-tenants" style="display:none;"><div id="tenants-list" style="padding:0 1rem;"></div></div>
 
   <!-- STATS (admin) -->
-  <div id="tab-stats" style="display:none;">
-    <div class="metric-grid" id="stats-metrics"></div>
-    <div class="card"><div class="section-title">Rush hours</div><div id="rush-hours"></div></div>
-    <div class="card"><div class="section-title">Bookings per tenant</div><div id="per-tenant"></div></div>
-    <div class="card"><div class="section-title">Busiest days</div><div id="busiest-days"></div></div>
+  <div id="tab-stats" style="display:none;padding:0 1rem;">
+    <div class="metric-grid" id="stats-metrics" style="margin-top:0.5rem;"></div>
+    <div class="list-card" style="padding:1rem;margin-bottom:1rem;"><div class="section-title" id="lbl-stat-rush">Rush hours</div><div id="rush-hours"></div></div>
+    <div class="list-card" style="padding:1rem;margin-bottom:1rem;"><div class="section-title" id="lbl-stat-per-tenant">Bookings per tenant</div><div id="per-tenant"></div></div>
+    <div class="list-card" style="padding:1rem;margin-bottom:1rem;"><div class="section-title" id="lbl-stat-busiest">Busiest days</div><div id="busiest-days"></div></div>
   </div>
 
   <!-- APPROVALS (admin) -->
-  <div id="tab-approvals" style="display:none;">
-    <div class="section-title" id="lbl-pending-reg">Pending registrations</div>
+  <div id="tab-approvals" style="display:none;padding:0 1rem;">
+    <p style="font-size:13px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.04em;margin:1rem 0 0.4rem;" id="lbl-pending-reg">Pending registrations</p>
     <div id="admin-pending"></div>
-    <div class="section-title" id="lbl-approved-tenants" style="margin-top:1rem;">Approved tenants</div>
+    <p style="font-size:13px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.04em;margin:1rem 0 0.4rem;" id="lbl-approved-tenants">Approved tenants</p>
     <div id="admin-approved"></div>
   </div>
 
   <!-- NOTIFICATIONS (admin) -->
-  <div id="tab-notifications" style="display:none;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-      <div class="section-title" style="margin-bottom:0;">Alerts</div>
-      <button id="btn-mark-all-read" onclick="markAllRead()" style="font-size:12px;padding:4px 10px;background:none;border:0.5px solid rgba(0,0,0,0.15);border-radius:8px;cursor:pointer;color:#666;">Mark all read</button>
+  <div id="tab-notifications" style="display:none;padding:0 1rem;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin:0.75rem 0;">
+      <p style="font-size:22px;font-weight:700;letter-spacing:-0.02em;">Alerts</p>
+      <button id="btn-mark-all-read" onclick="markAllRead()" style="font-size:14px;padding:6px 14px;background:var(--bg3);border:none;border-radius:20px;cursor:pointer;color:var(--accent);font-weight:500;">Mark all read</button>
     </div>
-    <p id="lbl-tap-alert" style="font-size:12px;color:#888;margin-bottom:10px;">Tap an alert to go to the relevant section.</p>
-    <div class="card" style="padding:0.5rem 0.75rem;"><div id="notif-list"></div></div>
+    <p id="lbl-tap-alert" style="font-size:13px;color:var(--text3);margin-bottom:10px;">Tap an alert to go to the relevant section.</p>
+    <div class="list-card"><div id="notif-list"></div></div>
   </div>
 </div>
 
@@ -392,7 +557,11 @@ const LANGS = {
     choosePin:'Choose a PIN', confirmPin:'Confirm PIN',
     submitReg:'Submit registration', regSent:'Registration sent!',
     waitingApproval:'Waiting for manager approval.',
-    backToSignIn:'Back to sign in', waitingTitle:'Waiting for approval',
+    backToSignIn:'Back to sign in', forgotPin:'Forgot PIN?',
+    forgotPinTitle:'Reset your PIN', forgotPinSub:'Enter your phone number and we\'ll send a reset code to your email.',
+    sendResetCode:'Send reset code', codeSentTo:'Code sent to',
+    enterResetCode:'Enter the reset code', newPinLabel:'New PIN', confirmNewPinLabel:'Confirm new PIN',
+    resetPin:'Reset PIN', pinResetSuccess:'PIN reset successfully! You can now sign in.', waitingTitle:'Waiting for approval',
     waitingMsg:"The building manager hasn't approved your account yet.",
     signOut:'Sign out', book:'Book', schedule:'Schedule', myBookings:'My bookings',
     tenants:'Tenants', stats:'Stats', approvals:'Approvals', alerts:'Alerts', profile:'Profile',
@@ -437,7 +606,11 @@ const LANGS = {
     choosePin:'בחר PIN', confirmPin:'אשר PIN',
     submitReg:'שלח הרשמה', regSent:'ההרשמה נשלחה!',
     waitingApproval:'ממתין לאישור המנהל.',
-    backToSignIn:'חזרה לכניסה', waitingTitle:'ממתין לאישור',
+    backToSignIn:'חזרה לכניסה', forgotPin:'שכחת PIN?',
+    forgotPinTitle:'איפוס PIN', forgotPinSub:'הכנס את מספר הטלפון שלך ונשלח קוד לאימייל שלך.',
+    sendResetCode:'שלח קוד איפוס', codeSentTo:'קוד נשלח ל',
+    enterResetCode:'הכנס את קוד האיפוס', newPinLabel:'PIN חדש', confirmNewPinLabel:'אשר PIN חדש',
+    resetPin:'אפס PIN', pinResetSuccess:'!PIN אופס בהצלחה. כעת תוכל להתחבר', waitingTitle:'ממתין לאישור',
     waitingMsg:'מנהל הבניין טרם אישר את חשבונך.',
     signOut:'יציאה', book:'הזמנה', schedule:'לוח זמנים', myBookings:'ההזמנות שלי',
     tenants:'דיירים', stats:'סטטיסטיקה', approvals:'אישורים', alerts:'התראות', profile:'פרופיל',
@@ -482,7 +655,11 @@ const LANGS = {
     choosePin:'Choisir un PIN', confirmPin:'Confirmer le PIN',
     submitReg:"Soumettre l'inscription", regSent:'Inscription envoyée!',
     waitingApproval:"En attente d'approbation du gestionnaire.",
-    backToSignIn:'Retour à la connexion', waitingTitle:"En attente d'approbation",
+    backToSignIn:'Retour à la connexion', forgotPin:'PIN oublié?',
+    forgotPinTitle:'Réinitialiser le PIN', forgotPinSub:'Entrez votre numéro de téléphone et nous enverrons un code à votre e-mail.',
+    sendResetCode:'Envoyer le code', codeSentTo:'Code envoyé à',
+    enterResetCode:'Entrez le code de réinitialisation', newPinLabel:'Nouveau PIN', confirmNewPinLabel:'Confirmer le nouveau PIN',
+    resetPin:'Réinitialiser le PIN', pinResetSuccess:'PIN réinitialisé! Vous pouvez maintenant vous connecter.', waitingTitle:"En attente d'approbation",
     waitingMsg:"Le gestionnaire n'a pas encore approuvé votre compte.",
     signOut:'Se déconnecter', book:'Réserver', schedule:'Planning', myBookings:'Mes réservations',
     tenants:'Locataires', stats:'Statistiques', approvals:'Approbations', alerts:'Alertes', profile:'Profil',
@@ -562,10 +739,20 @@ function applyLang(){
     'btn-change-pin':'changePin',
     'lbl-current-pin':'currentPin','lbl-new-pin':'newPin',
     'lbl-confirm-pin':'confirmNewPin','btn-update-pin':'updatePin',
-    'lbl-pending-reg':'pendingRegistrations',
+    'btn-forgot-pin':'forgotPin',
+    'lbl-forgot-title':'forgotPinTitle','lbl-forgot-sub':'forgotPinSub',
+    'lbl-forgot-phone':'phoneNumber','btn-send-reset':'sendResetCode',
+    'lbl-reset-title':'forgotPinTitle','lbl-code-sent-to':'codeSentTo',
+    'lbl-enter-reset-code':'enterResetCode',
+    'lbl-new-pin-reset':'newPinLabel','lbl-confirm-pin-reset':'confirmNewPinLabel',
+    'btn-reset-pin':'resetPin',
+    'back-forgot':'←','back-reset':'←',
     'lbl-approved-tenants':'approvedTenants',
     'btn-mark-all-read':'markAllRead',
     'lbl-tap-alert':'tapAlert',
+    'lbl-stat-rush':'rushHours',
+    'lbl-stat-per-tenant':'bookingsPerTenant',
+    'lbl-stat-busiest':'busiestDays',
   };
   Object.entries(map).forEach(([id,key])=>{
     const el=document.getElementById(id);if(el)el.textContent=t(key);
@@ -775,7 +962,43 @@ async function doLogout(){
   showScreen('screen-login');
 }
 
-// ── registration ──────────────────────────────────────────
+// ── forgot PIN ────────────────────────────────────────────
+async function doForgotPin(){
+  const phone=document.getElementById('forgot-phone').value.trim();
+  const msg=document.getElementById('forgot-msg');
+  if(!phone){msg.innerHTML=`<div class="msg msg-error">${t('phone')} required.</div>`;return;}
+  try{
+    const res=await apiPost('/auth/forgot-pin',{phone});
+    document.getElementById('reset-email-masked').textContent=res.maskedEmail||'your email';
+    document.getElementById('reset-code').value='';
+    document.getElementById('reset-pin').value='';
+    document.getElementById('reset-pin2').value='';
+    document.getElementById('reset-msg').innerHTML='';
+    // store phone for reset step
+    window._resetPhone=phone;
+    msg.innerHTML='';
+    showScreen('screen-reset');
+  }catch(e){
+    msg.innerHTML=`<div class="msg msg-error" style="margin-top:8px;">${e.message.includes('not found')?'Phone number not found.':e.message.includes('No email')?'No email on file. Contact the building manager.':'Failed to send code. Try again.'}</div>`;
+  }
+}
+
+async function doResetPin(){
+  const code=document.getElementById('reset-code').value.trim();
+  const pin=document.getElementById('reset-pin').value.trim();
+  const pin2=document.getElementById('reset-pin2').value.trim();
+  const msg=document.getElementById('reset-msg');
+  if(!code||!pin||!pin2){msg.innerHTML=`<div class="msg msg-error">Please fill in all fields.</div>`;return;}
+  if(pin.length!==4||!/^\d+$/.test(pin)){msg.innerHTML=`<div class="msg msg-error">PIN must be 4 digits.</div>`;return;}
+  if(pin!==pin2){msg.innerHTML=`<div class="msg msg-error">PINs don't match.</div>`;return;}
+  try{
+    await apiPost('/auth/reset-pin',{phone:window._resetPhone,code,newPin:pin});
+    msg.innerHTML=`<div class="msg msg-success">${t('pinResetSuccess')}</div>`;
+    setTimeout(()=>showScreen('screen-login'),2000);
+  }catch(e){
+    msg.innerHTML=`<div class="msg msg-error">${e.message.includes('expired')||e.message.includes('Invalid')?'Incorrect or expired code.':'Reset failed. Try again.'}</div>`;
+  }
+}
 async function goRegStep2(){
   const fname=document.getElementById('reg-fname').value.trim();
   const lname=document.getElementById('reg-lname').value.trim();
@@ -1032,19 +1255,21 @@ async function schedAdminCancel(key){
   }catch(e){showToast('Could not remove.');}
 }
 
-// ── my bookings ───────────────────────────────────────────
 function renderMyBookings(){
   const list=document.getElementById('my-bookings-list');
   const mine=Object.entries(bookings).filter(([k,v])=>v===currentUser.id).sort((a,b)=>a[0].localeCompare(b[0]));
-  if(!mine.length){list.innerHTML=`<div class="card" style="color:#888;font-size:14px;">${t('noBookings')}</div>`;return;}
-  list.innerHTML=mine.map(([key])=>{
+  if(!mine.length){list.innerHTML=`<div style="padding:2rem 0;text-align:center;color:var(--text3);font-size:15px;">${t('noBookings')}</div>`;return;}
+  list.innerHTML='<div class="list-card">'+mine.map(([key])=>{
     const[date,hs]=key.split('_');const h=parseInt(hs);
     const dl=new Date(date).toLocaleDateString(lang==='he'?'he-IL':lang==='fr'?'fr-FR':'en-GB',{weekday:'short',day:'numeric',month:'short'});
-    return`<div class="card" style="display:flex;align-items:center;justify-content:space-between;">
-      <div><p style="font-size:15px;font-weight:500;">${timeStr(h)}</p><p style="font-size:13px;color:#888;">${dl}</p></div>
+    return`<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 1rem;border-bottom:0.5px solid var(--border);">
+      <div>
+        <p style="font-size:16px;font-weight:600;color:var(--text1);direction:ltr;">${timeStr(h)}</p>
+        <p style="font-size:13px;color:var(--text3);margin-top:2px;">${dl}</p>
+      </div>
       <button class="cancel-btn" onclick="cancelFromMy('${key}')">${t('cancelBtn')}</button>
     </div>`;
-  }).join('');
+  }).join('')+'</div>';
 }
 async function cancelFromMy(key){
   const[date,h]=key.split('_');
@@ -1062,21 +1287,24 @@ async function cancelFromMy(key){
 function renderTenants(){
   const tenants=users.filter(u=>!u.isAdmin&&u.approved);
   const list=document.getElementById('tenants-list');
-  if(!tenants.length){list.innerHTML=`<p style="font-size:14px;color:#888;">${t('noApprovedTenants')}</p>`;return;}
+  if(!tenants.length){list.innerHTML=`<p style="font-size:15px;color:var(--text3);padding:1rem 0;">${t('noApprovedTenants')}</p>`;return;}
   const locale=lang==='he'?'he-IL':lang==='fr'?'fr-FR':'en-GB';
   list.innerHTML=tenants.map(u=>{
     const count=Object.values(bookings).filter(v=>v===u.id).length;
     const lastKey=Object.entries(bookings).filter(([k,v])=>v===u.id).sort((a,b)=>b[0].localeCompare(a[0]))[0];
     const lastBook=lastKey?new Date(lastKey[0].split('_')[0]).toLocaleDateString(locale,{day:'numeric',month:'short'}):null;
-    return`<div class="card">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
-        <div class="avatar" style="width:36px;height:36px;font-size:12px;">${initials(u)}</div>
-        <div style="flex:1;"><p style="font-size:14px;font-weight:500;">${u.fname} ${u.lname}</p><p style="font-size:12px;color:#888;">${t('apartment')} ${u.apt} · ${u.phone}</p></div>
+    return`<div class="list-card" style="margin-bottom:10px;">
+      <div style="display:flex;align-items:center;gap:12px;padding:14px 1rem;">
+        <div class="avatar" style="width:44px;height:44px;font-size:14px;flex-shrink:0;">${initials(u)}</div>
+        <div style="flex:1;min-width:0;">
+          <p style="font-size:16px;font-weight:600;color:var(--text1);">${u.fname} ${u.lname}</p>
+          <p style="font-size:13px;color:var(--text3);">${t('apartment')} ${u.apt} · ${u.phone}</p>
+        </div>
         <button class="deny-btn" onclick="revokeUser('${u.id}')">${t('revoke')}</button>
       </div>
-      <div style="display:flex;gap:16px;border-top:0.5px solid rgba(0,0,0,0.07);padding-top:8px;">
-        <div><p style="font-size:11px;color:#888;">${t('totalBookings')}</p><p style="font-size:16px;font-weight:500;">${count}</p></div>
-        ${lastBook?`<div><p style="font-size:11px;color:#888;">${t('lastBooking')}</p><p style="font-size:16px;font-weight:500;">${lastBook}</p></div>`:''}
+      <div style="display:flex;gap:24px;border-top:0.5px solid var(--border);padding:12px 1rem;">
+        <div><p style="font-size:12px;color:var(--text3);font-weight:500;">${t('totalBookings')}</p><p style="font-size:20px;font-weight:700;color:var(--text1);">${count}</p></div>
+        ${lastBook?`<div><p style="font-size:12px;color:var(--text3);font-weight:500;">${t('lastBooking')}</p><p style="font-size:20px;font-weight:700;color:var(--text1);">${lastBook}</p></div>`:''}
       </div>
     </div>`;
   }).join('');
@@ -1115,9 +1343,9 @@ function renderStats(){
   const pt=document.getElementById('per-tenant')?.previousElementSibling;
   const bd=document.getElementById('busiest-days')?.previousElementSibling;
   document.querySelectorAll('.section-title').forEach(el=>{
-    if(el.textContent.includes('Rush')||el.textContent.includes('עומס')||el.textContent.includes('pointe')) el.textContent=t('rushHours');
-    if(el.textContent.includes('per tenant')||el.textContent.includes('לדייר')||el.textContent.includes('locataire')) el.textContent=t('bookingsPerTenant');
-    if(el.textContent.includes('Busiest')||el.textContent.includes('עמוסים')||el.textContent.includes('chargés')) el.textContent=t('busiestDays');
+    if(el.id==='lbl-stat-rush') el.textContent=t('rushHours');
+    if(el.id==='lbl-stat-per-tenant') el.textContent=t('bookingsPerTenant');
+    if(el.id==='lbl-stat-busiest') el.textContent=t('busiestDays');
   });
   const hc={};HOURS.forEach(h=>hc[h]=0);
   all.forEach(([k])=>{const h=parseInt(k.split('_')[1]);hc[h]=(hc[h]||0)+1;});
@@ -1144,21 +1372,25 @@ function renderApprovals(){
   const pending=users.filter(u=>!u.isAdmin&&!u.approved);
   const approved=users.filter(u=>!u.isAdmin&&u.approved);
   document.getElementById('admin-pending').innerHTML=!pending.length
-    ?`<p style="font-size:13px;color:#888;margin-bottom:12px;">${t('noPendingReg')}</p>`
-    :pending.map(u=>`<div class="card" id="user-card-${u.id}" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;transition:background 1.5s;">
-        <div style="flex:1;min-width:130px;"><p style="font-size:14px;font-weight:500;">${u.fname} ${u.lname}</p><p style="font-size:12px;color:#888;">${t('apartment')} ${u.apt} · ${u.phone}</p></div>
-        <span class="badge badge-pending">${t('pending')}</span>
-        <button class="approve-btn" onclick="approveUser('${u.id}')">${t('approve')}</button>
-        <button class="deny-btn" onclick="denyUser('${u.id}')">${t('deny')}</button>
-      </div>`).join('');
+    ?`<p style="font-size:14px;color:var(--text3);padding:4px 0 12px;">${t('noPendingReg')}</p>`
+    :'<div class="list-card" style="margin-bottom:10px;">'+pending.map(u=>`
+      <div class="list-row" id="user-card-${u.id}" style="transition:background 1.5s;flex-wrap:wrap;gap:8px;">
+        <div class="avatar" style="width:40px;height:40px;font-size:13px;flex-shrink:0;">${initials(u)}</div>
+        <div style="flex:1;min-width:120px;"><p style="font-size:15px;font-weight:600;color:var(--text1);">${u.fname} ${u.lname}</p><p style="font-size:13px;color:var(--text3);">${t('apartment')} ${u.apt} · ${u.phone}</p></div>
+        <div style="display:flex;gap:8px;">
+          <button class="approve-btn" onclick="approveUser('${u.id}')">${t('approve')}</button>
+          <button class="deny-btn" onclick="denyUser('${u.id}')">${t('deny')}</button>
+        </div>
+      </div>`).join('')+'</div>';
   document.getElementById('admin-approved').innerHTML=!approved.length
-    ?`<p style="font-size:13px;color:#888;">${t('noApprovedTenants')}</p>`
-    :approved.map(u=>`<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:0.5px solid rgba(0,0,0,0.07);">
-        <div class="avatar">${initials(u)}</div>
-        <div style="flex:1;"><p style="font-size:13px;font-weight:500;">${u.fname} ${u.lname}</p><p style="font-size:11px;color:#888;">${t('apartment')} ${u.apt} · ${u.phone}</p></div>
+    ?`<p style="font-size:14px;color:var(--text3);">${t('noApprovedTenants')}</p>`
+    :'<div class="list-card">'+approved.map(u=>`
+      <div class="list-row">
+        <div class="avatar" style="width:36px;height:36px;font-size:12px;">${initials(u)}</div>
+        <div style="flex:1;min-width:0;"><p style="font-size:15px;font-weight:500;color:var(--text1);">${u.fname} ${u.lname}</p><p style="font-size:12px;color:var(--text3);">${t('apartment')} ${u.apt} · ${u.phone}</p></div>
         <span class="badge badge-approved">${t('approved')}</span>
-        <button class="deny-btn" style="margin-left:4px;" onclick="revokeUser2('${u.id}')">${t('revoke')}</button>
-      </div>`).join('');
+        <button class="deny-btn" onclick="revokeUser2('${u.id}')">${t('revoke')}</button>
+      </div>`).join('')+'</div>';
 }
 function scrollHighlightUser(id){
   const card=document.getElementById('user-card-'+id);if(!card)return;
