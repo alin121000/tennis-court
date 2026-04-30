@@ -3,7 +3,6 @@ const bcrypt = require('bcryptjs');
 const session = require('express-session');
 const pgSession = require('connect-pg-simple')(session);
 const { Pool } = require('pg');
-const nodemailer = require('nodemailer');
 const path = require('path');
 require('dotenv').config();
 
@@ -14,19 +13,30 @@ const MAX_ADVANCE_DAYS = 3;
 // ── database ──────────────────────────────────────────────
 const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
 
-// ── gmail mailer ──────────────────────────────────────────
-const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 465,
-  secure: true,
-  auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_PASS
-  },
-  connectionTimeout: 10000,
-  greetingTimeout: 10000,
-  socketTimeout: 15000,
-});
+// ── email sender (Resend HTTP API — works on Render free tier) ────
+async function sendEmail(to, subject, html) {
+  if (!process.env.RESEND_API_KEY) {
+    console.log(`[DEV] Email to ${to}: ${subject}`);
+    return;
+  }
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      from: process.env.FROM_EMAIL || 'onboarding@resend.dev',
+      to,
+      subject,
+      html
+    })
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error('Resend error: ' + err);
+  }
+}
 
 // ── middleware ────────────────────────────────────────────
 app.set('trust proxy', 1);
@@ -64,24 +74,18 @@ function isWithinAdvanceLimit(dateStr) {
   return diffDays >= 0 && diffDays <= MAX_ADVANCE_DAYS;
 }
 
-// ── send email OTP ────────────────────────────────────────
-async function sendEmail(to, code) {
-  if (!process.env.GMAIL_USER || !process.env.GMAIL_PASS) {
-    console.log(`[DEV] Email to ${to}: code is ${code}`);
-    return;
-  }
-  await transporter.sendMail({
-    from: `"Court Booking" <${process.env.GMAIL_USER}>`,
+// ── send OTP email ────────────────────────────────────────
+async function sendOTPEmail(to, code) {
+  await sendEmail(
     to,
-    subject: 'Your court booking verification code',
-    html: `
-      <div style="font-family:sans-serif;max-width:400px;margin:0 auto;padding:24px;">
-        <h2 style="margin-bottom:8px;">Court Booking</h2>
-        <p style="color:#555;margin-bottom:24px;">Your verification code is:</p>
-        <div style="font-size:36px;font-weight:600;letter-spacing:10px;text-align:center;padding:20px;background:#f5f5f3;border-radius:8px;">${code}</div>
-        <p style="color:#888;font-size:13px;margin-top:16px;">Valid for 10 minutes. If you didn't request this, ignore this email.</p>
-      </div>`
-  });
+    'Your court booking verification code',
+    `<div style="font-family:sans-serif;max-width:400px;margin:0 auto;padding:24px;">
+      <h2 style="margin-bottom:8px;">Court Booking</h2>
+      <p style="color:#555;margin-bottom:24px;">Your verification code is:</p>
+      <div style="font-size:36px;font-weight:600;letter-spacing:10px;text-align:center;padding:20px;background:#f5f5f3;border-radius:8px;">${code}</div>
+      <p style="color:#888;font-size:13px;margin-top:16px;">Valid for 10 minutes.</p>
+    </div>`
+  );
 }
 
 // ── OTP code store ────────────────────────────────────────
@@ -143,18 +147,16 @@ app.post('/api/auth/forgot-pin', async (req, res) => {
     if (!user.email) return res.status(400).json({ error: 'No email on file for this account' });
     const code = Math.floor(1000 + Math.random() * 9000).toString();
     otpCodes.set('reset_' + phone, { code, expires: Date.now() + 10 * 60 * 1000 });
-    await transporter.sendMail({
-      from: `"Court Booking" <${process.env.GMAIL_USER}>`,
-      to: user.email,
-      subject: 'Reset your court booking PIN',
-      html: `
-        <div style="font-family:sans-serif;max-width:400px;margin:0 auto;padding:24px;">
-          <h2>Reset your PIN</h2>
-          <p style="color:#555;">Hi ${user.fname}, use this code to reset your PIN:</p>
-          <div style="font-size:36px;font-weight:600;letter-spacing:10px;text-align:center;padding:20px;background:#f5f5f3;border-radius:8px;">${code}</div>
-          <p style="color:#888;font-size:13px;margin-top:16px;">Valid for 10 minutes. If you didn't request this, ignore this email.</p>
-        </div>`
-    });
+    await sendEmail(
+      user.email,
+      'Reset your court booking PIN',
+      `<div style="font-family:sans-serif;max-width:400px;margin:0 auto;padding:24px;">
+        <h2>Reset your PIN</h2>
+        <p style="color:#555;">Hi ${user.fname}, use this code to reset your PIN:</p>
+        <div style="font-size:36px;font-weight:600;letter-spacing:10px;text-align:center;padding:20px;background:#f5f5f3;border-radius:8px;">${code}</div>
+        <p style="color:#888;font-size:13px;margin-top:16px;">Valid for 10 minutes. If you didn't request this, ignore this email.</p>
+      </div>`
+    );
     res.json({ ok: true, maskedEmail: user.email.replace(/(.{2}).*(@.*)/, '$1***$2') });
   } catch(e) {
     console.error('forgot-pin error:', e.message);
@@ -209,7 +211,7 @@ app.post('/api/auth/send-otp', async (req, res) => {
     if (existing.rows.length) return res.status(409).json({ error: 'Phone already registered' });
     const code = Math.floor(1000 + Math.random() * 9000).toString();
     otpCodes.set(email, { code, expires: Date.now() + 10 * 60 * 1000 });
-    await sendEmail(email, code);
+    await sendOTPEmail(email, code);
     res.json({ ok: true });
   } catch(e) {
     console.error('send-otp error:', e.message);
@@ -328,18 +330,16 @@ app.post('/api/users/:id/approve', requireAuth, requireAdmin, async (req, res) =
   // send approval email if being approved and has email
   if (approved && user.email) {
     try {
-      await transporter.sendMail({
-        from: `"Court Booking" <${process.env.GMAIL_USER}>`,
-        to: user.email,
-        subject: 'Your court booking account has been approved!',
-        html: `
-          <div style="font-family:sans-serif;max-width:400px;margin:0 auto;padding:24px;">
-            <h2>You're approved! 🎾</h2>
-            <p>Hi ${user.fname}, your court booking account has been approved by the building manager.</p>
-            <p>You can now sign in and start booking the court.</p>
-            <p style="color:#888;font-size:13px;">Sign in with your phone number and PIN.</p>
-          </div>`
-      });
+      await sendEmail(
+        user.email,
+        'Your court booking account has been approved!',
+        `<div style="font-family:sans-serif;max-width:400px;margin:0 auto;padding:24px;">
+          <h2>You're approved! 🎾</h2>
+          <p>Hi ${user.fname}, your court booking account has been approved by the building manager.</p>
+          <p>You can now sign in and start booking the court.</p>
+          <p style="color:#888;font-size:13px;">Sign in with your phone number and PIN.</p>
+        </div>`
+      );
     } catch(e) { console.error('Approval email error:', e.message); }
   }
   res.json(rows[0]);
