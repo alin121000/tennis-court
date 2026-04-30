@@ -128,6 +128,52 @@ app.post('/api/auth/logout', (req, res) => {
   res.json({ ok: true });
 });
 
+// Forgot PIN — step 1: send reset code to email
+app.post('/api/auth/forgot-pin', async (req, res) => {
+  try {
+    const { phone } = req.body;
+    const { rows } = await pool.query('SELECT id, fname, email FROM users WHERE phone=$1', [phone]);
+    if (!rows.length) return res.status(404).json({ error: 'Phone not found' });
+    const user = rows[0];
+    if (!user.email) return res.status(400).json({ error: 'No email on file for this account' });
+    const code = Math.floor(1000 + Math.random() * 9000).toString();
+    otpCodes.set('reset_' + phone, { code, expires: Date.now() + 10 * 60 * 1000 });
+    await transporter.sendMail({
+      from: `"Court Booking" <${process.env.GMAIL_USER}>`,
+      to: user.email,
+      subject: 'Reset your court booking PIN',
+      html: `
+        <div style="font-family:sans-serif;max-width:400px;margin:0 auto;padding:24px;">
+          <h2>Reset your PIN</h2>
+          <p style="color:#555;">Hi ${user.fname}, use this code to reset your PIN:</p>
+          <div style="font-size:36px;font-weight:600;letter-spacing:10px;text-align:center;padding:20px;background:#f5f5f3;border-radius:8px;">${code}</div>
+          <p style="color:#888;font-size:13px;margin-top:16px;">Valid for 10 minutes. If you didn't request this, ignore this email.</p>
+        </div>`
+    });
+    res.json({ ok: true, maskedEmail: user.email.replace(/(.{2}).*(@.*)/, '$1***$2') });
+  } catch(e) {
+    console.error('forgot-pin error:', e.message);
+    res.status(500).json({ error: 'Failed to send reset email' });
+  }
+});
+
+// Forgot PIN — step 2: verify code + set new PIN
+app.post('/api/auth/reset-pin', async (req, res) => {
+  try {
+    const { phone, code, newPin } = req.body;
+    if (!/^\d{4}$/.test(newPin)) return res.status(400).json({ error: 'PIN must be 4 digits' });
+    const entry = otpCodes.get('reset_' + phone);
+    if (!entry || entry.code !== code || Date.now() > entry.expires)
+      return res.status(400).json({ error: 'Invalid or expired code' });
+    const newHash = await bcrypt.hash(newPin, 10);
+    await pool.query('UPDATE users SET pin_hash=$1 WHERE phone=$2', [newHash, phone]);
+    otpCodes.delete('reset_' + phone);
+    res.json({ ok: true });
+  } catch(e) {
+    res.status(500).json({ error: 'Reset failed' });
+  }
+});
+
 app.post('/api/auth/change-pin', requireAuth, async (req, res) => {
   const { currentPin, newPin } = req.body;
   if (!/^\d{4}$/.test(newPin)) return res.status(400).json({ error: 'PIN must be 4 digits' });
@@ -258,7 +304,7 @@ app.delete('/api/bookings/:date/:hour', requireAuth, async (req, res) => {
 
 // ── routes: users (admin) ─────────────────────────────────
 
-app.get('/api/users', requireAuth, requireAdmin, async (req, res) => {
+app.get('/api/users', requireAuth, async (req, res) => {
   const { rows } = await pool.query('SELECT id,fname,lname,apt,phone,is_admin,approved,created_at FROM users ORDER BY created_at');
   res.json(rows);
 });
