@@ -31,10 +31,14 @@ async function sendEmail(to, subject, html) {
     console.log(`[DEV] Email to ${to}: ${subject}`);
     return;
   }
-  await transporter.sendMail({
-    from: `"Court Booking" <${process.env.GMAIL_USER}>`,
-    to, subject, html
-  });
+  // wrap in a timeout so it never hangs the request
+  await Promise.race([
+    transporter.sendMail({
+      from: `"Court Booking" <${process.env.GMAIL_USER}>`,
+      to, subject, html
+    }),
+    new Promise((_, reject) => setTimeout(() => reject(new Error('Email timeout')), 8000))
+  ]);
 }
 
 // ── middleware ────────────────────────────────────────────
