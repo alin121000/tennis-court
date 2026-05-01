@@ -13,29 +13,28 @@ const MAX_ADVANCE_DAYS = 3;
 // ── database ──────────────────────────────────────────────
 const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
 
-// ── email sender (Resend HTTP API — works on Render free tier) ────
+const nodemailer = require('nodemailer');
+
+// ── gmail mailer ──────────────────────────────────────────
+const transporter = nodemailer.createTransport({
+  host: 'smtp.gmail.com',
+  port: 465,
+  secure: true,
+  auth: {
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_PASS
+  }
+});
+
 async function sendEmail(to, subject, html) {
-  if (!process.env.RESEND_API_KEY) {
+  if (!process.env.GMAIL_USER || !process.env.GMAIL_PASS) {
     console.log(`[DEV] Email to ${to}: ${subject}`);
     return;
   }
-  const res = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      from: process.env.FROM_EMAIL || 'onboarding@resend.dev',
-      to,
-      subject,
-      html
-    })
+  await transporter.sendMail({
+    from: `"Court Booking" <${process.env.GMAIL_USER}>`,
+    to, subject, html
   });
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error('Resend error: ' + err);
-  }
 }
 
 // ── middleware ────────────────────────────────────────────
