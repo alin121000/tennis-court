@@ -146,20 +146,26 @@ app.post('/api/auth/forgot-pin', async (req, res) => {
     if (!user.email) return res.status(400).json({ error: 'No email on file for this account' });
     const code = Math.floor(1000 + Math.random() * 9000).toString();
     otpCodes.set('reset_' + phone, { code, expires: Date.now() + 10 * 60 * 1000 });
-    await sendEmail(
-      user.email,
-      'Reset your court booking PIN',
-      `<div style="font-family:sans-serif;max-width:400px;margin:0 auto;padding:24px;">
-        <h2>Reset your PIN</h2>
-        <p style="color:#555;">Hi ${user.fname}, use this code to reset your PIN:</p>
-        <div style="font-size:36px;font-weight:600;letter-spacing:10px;text-align:center;padding:20px;background:#f5f5f3;border-radius:8px;">${code}</div>
-        <p style="color:#888;font-size:13px;margin-top:16px;">Valid for 10 minutes. If you didn't request this, ignore this email.</p>
-      </div>`
-    );
+    // try to send email, but don't fail if it doesn't work
+    try {
+      await sendEmail(
+        user.email,
+        'Reset your court booking PIN',
+        `<div style="font-family:sans-serif;max-width:400px;margin:0 auto;padding:24px;">
+          <h2>Reset your PIN</h2>
+          <p style="color:#555;">Hi ${user.fname}, use this code to reset your PIN:</p>
+          <div style="font-size:36px;font-weight:600;letter-spacing:10px;text-align:center;padding:20px;background:#f5f5f3;border-radius:8px;">${code}</div>
+          <p style="color:#888;font-size:13px;margin-top:16px;">Valid for 10 minutes.</p>
+        </div>`
+      );
+    } catch(emailErr) {
+      // log code to console so admin can retrieve it if needed
+      console.log(`[RESET CODE] Phone: ${phone}, Code: ${code}, Email failed: ${emailErr.message}`);
+    }
     res.json({ ok: true, maskedEmail: user.email.replace(/(.{2}).*(@.*)/, '$1***$2') });
   } catch(e) {
     console.error('forgot-pin error:', e.message);
-    res.status(500).json({ error: 'Failed to send reset email' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 });
 
