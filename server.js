@@ -218,8 +218,8 @@ app.post('/api/auth/send-otp', async (req, res) => {
     const code = Math.floor(1000 + Math.random() * 9000).toString();
     otpCodes.set(email, { code, expires: Date.now() + 10 * 60 * 1000 });
     // respond immediately, send email in background
-    res.json({ ok: true });
-    sendOTPEmail(email, code).then(() => {
+    console.log('[OTP] Starting email send to', email);
+    res.json({ ok: true });    sendOTPEmail(email, code).then(() => {
       console.log('[OTP] Email sent to', email);
     }).catch(e => {
       console.log('[OTP CODE]', email, code, '- email failed:', e.message);
