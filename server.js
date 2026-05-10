@@ -15,6 +15,7 @@ const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejec
 
 const nodemailer = require('nodemailer');
 
+// ── gmail mailer ──────────────────────────────────────────
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -24,13 +25,12 @@ const transporter = nodemailer.createTransport({
 });
 
 async function sendEmail(to, subject, html) {
-  if (!process.env.BREVO_SMTP_LOGIN || !process.env.BREVO_SMTP_PASS) {
+  if (!process.env.GMAIL_USER || !process.env.GMAIL_PASS) {
     console.log(`[DEV] Email to ${to}: ${subject}`);
     return;
   }
-  const from = process.env.BREVO_FROM || process.env.BREVO_SMTP_LOGIN;
   await transporter.sendMail({
-    from: `"Court Booking" <${from}>`,
+    from: `"Court Booking" <${process.env.GMAIL_USER}>`,
     to, subject, html
   });
 }
@@ -215,8 +215,8 @@ app.post('/api/auth/send-otp', async (req, res) => {
     const code = Math.floor(1000 + Math.random() * 9000).toString();
     otpCodes.set(email, { code, expires: Date.now() + 10 * 60 * 1000 });
     // respond immediately, send email in background
-    console.log('[OTP] Starting email send to', email);
-    res.json({ ok: true });    sendOTPEmail(email, code).then(() => {
+    res.json({ ok: true });
+    sendOTPEmail(email, code).then(() => {
       console.log('[OTP] Email sent to', email);
     }).catch(e => {
       console.log('[OTP CODE]', email, code, '- email failed:', e.message);
