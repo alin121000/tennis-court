@@ -18,12 +18,14 @@ const nodemailer = require('nodemailer');
 // ── gmail mailer ──────────────────────────────────────────
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
-  port: 465,
-  secure: true,
+  port: 587,
+  secure: false,
+  requireTLS: true,
   auth: {
     user: process.env.GMAIL_USER,
     pass: process.env.GMAIL_PASS
-  }
+  },
+  tls: { rejectUnauthorized: false }
 });
 
 async function sendEmail(to, subject, html) {
@@ -31,14 +33,10 @@ async function sendEmail(to, subject, html) {
     console.log(`[DEV] Email to ${to}: ${subject}`);
     return;
   }
-  // wrap in a timeout so it never hangs the request
-  await Promise.race([
-    transporter.sendMail({
-      from: `"Court Booking" <${process.env.GMAIL_USER}>`,
-      to, subject, html
-    }),
-    new Promise((_, reject) => setTimeout(() => reject(new Error('Email timeout')), 8000))
-  ]);
+  await transporter.sendMail({
+    from: `"Court Booking" <${process.env.GMAIL_USER}>`,
+    to, subject, html
+  });
 }
 
 // ── middleware ────────────────────────────────────────────
@@ -71,12 +69,9 @@ function dateKey(offsetFromToday) {
   return d.toISOString().slice(0,10);
 }
 function isWithinAdvanceLimit(dateStr) {
-  const now = new Date();
-  const israelOffset = 3 * 60;
-  const israelTime = new Date(now.getTime() + israelOffset * 60000);
-  const todayStr = israelTime.toISOString().slice(0, 10);
-  const target = dateStr.slice(0, 10);
-  const diffDays = Math.round((new Date(target) - new Date(todayStr)) / 86400000);
+  const today = new Date(); today.setHours(0,0,0,0);
+  const target = new Date(dateStr);
+  const diffDays = Math.round((target - today) / 86400000);
   return diffDays >= 0 && diffDays <= MAX_ADVANCE_DAYS;
 }
 
