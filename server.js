@@ -15,7 +15,6 @@ const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejec
 
 const nodemailer = require('nodemailer');
 
-// ── brevo mailer ──────────────────────────────────────────
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
