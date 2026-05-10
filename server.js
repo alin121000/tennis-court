@@ -71,9 +71,12 @@ function dateKey(offsetFromToday) {
   return d.toISOString().slice(0,10);
 }
 function isWithinAdvanceLimit(dateStr) {
-  const today = new Date(); today.setHours(0,0,0,0);
-  const target = new Date(dateStr);
-  const diffDays = Math.round((target - today) / 86400000);
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const target = dateStr.slice(0, 10);
+  if (target < todayStr) return false;
+  const today = new Date(todayStr);
+  const targetDate = new Date(target);
+  const diffDays = Math.round((targetDate - today) / 86400000);
   return diffDays >= 0 && diffDays <= MAX_ADVANCE_DAYS;
 }
 
