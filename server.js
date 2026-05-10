@@ -15,26 +15,25 @@ const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejec
 
 const nodemailer = require('nodemailer');
 
-// ── gmail mailer ──────────────────────────────────────────
+// ── brevo mailer ──────────────────────────────────────────
 const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
+  host: 'smtp-relay.brevo.com',
   port: 587,
   secure: false,
-  requireTLS: true,
   auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_PASS
-  },
-  tls: { rejectUnauthorized: false }
+    user: process.env.BREVO_SMTP_LOGIN,
+    pass: process.env.BREVO_SMTP_PASS
+  }
 });
 
 async function sendEmail(to, subject, html) {
-  if (!process.env.GMAIL_USER || !process.env.GMAIL_PASS) {
+  if (!process.env.BREVO_SMTP_LOGIN || !process.env.BREVO_SMTP_PASS) {
     console.log(`[DEV] Email to ${to}: ${subject}`);
     return;
   }
+  const from = process.env.BREVO_FROM || process.env.BREVO_SMTP_LOGIN;
   await transporter.sendMail({
-    from: `"Court Booking" <${process.env.GMAIL_USER}>`,
+    from: `"Court Booking" <${from}>`,
     to, subject, html
   });
 }
@@ -219,7 +218,7 @@ app.post('/api/auth/send-otp', async (req, res) => {
     const code = Math.floor(1000 + Math.random() * 9000).toString();
     otpCodes.set(email, { code, expires: Date.now() + 10 * 60 * 1000 });
     // respond immediately, send email in background
-    res.json({ ok: true, devCode: process.env.NODE_ENV !== 'production' ? code : undefined });
+    res.json({ ok: true });
     sendOTPEmail(email, code).then(() => {
       console.log('[OTP] Email sent to', email);
     }).catch(e => {
