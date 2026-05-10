@@ -218,11 +218,16 @@ app.post('/api/auth/send-otp', async (req, res) => {
     if (existing.rows.length) return res.status(409).json({ error: 'Phone already registered' });
     const code = Math.floor(1000 + Math.random() * 9000).toString();
     otpCodes.set(email, { code, expires: Date.now() + 10 * 60 * 1000 });
-    await sendOTPEmail(email, code);
-    res.json({ ok: true });
+    // respond immediately, send email in background
+    res.json({ ok: true, devCode: process.env.NODE_ENV !== 'production' ? code : undefined });
+    sendOTPEmail(email, code).then(() => {
+      console.log('[OTP] Email sent to', email);
+    }).catch(e => {
+      console.log('[OTP CODE]', email, code, '- email failed:', e.message);
+    });
   } catch(e) {
     console.error('send-otp error:', e.message);
-    res.status(500).json({ error: 'Failed to send email: ' + e.message });
+    res.status(500).json({ error: 'Failed to process: ' + e.message });
   }
 });
 
