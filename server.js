@@ -71,12 +71,12 @@ function dateKey(offsetFromToday) {
   return d.toISOString().slice(0,10);
 }
 function isWithinAdvanceLimit(dateStr) {
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const now = new Date();
+  const israelOffset = 3 * 60;
+  const israelTime = new Date(now.getTime() + israelOffset * 60000);
+  const todayStr = israelTime.toISOString().slice(0, 10);
   const target = dateStr.slice(0, 10);
-  if (target < todayStr) return false;
-  const today = new Date(todayStr);
-  const targetDate = new Date(target);
-  const diffDays = Math.round((targetDate - today) / 86400000);
+  const diffDays = Math.round((new Date(target) - new Date(todayStr)) / 86400000);
   return diffDays >= 0 && diffDays <= MAX_ADVANCE_DAYS;
 }
 
