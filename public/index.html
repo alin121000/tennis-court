@@ -816,7 +816,7 @@ function initials(u){
   const l=(u.lname||'')[0]||'';
   return (f+l).toUpperCase()||'?';
 }
-function dateKey(offset){const d=new Date(today);d.setDate(d.getDate()+offset);return d.toISOString().slice(0,10);}
+function dateKey(offset){const d=new Date(today);d.setDate(d.getDate()+offset);const y=d.getFullYear();const m=String(d.getMonth()+1).padStart(2,'0');const day=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${day}`;}
 function offsetFromKey(dk){const d=new Date(dk);return Math.round((d-today)/86400000);}
 function dateLabel(offset){
   const d=new Date(today);d.setDate(d.getDate()+offset);
