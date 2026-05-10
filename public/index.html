@@ -262,6 +262,10 @@ input:focus{outline:none;border-color:var(--accent);}
       <p style="font-size:22px;font-weight:700;letter-spacing:-0.02em;" id="lbl-reset-title">Reset your PIN</p>
     </div>
     <p style="font-size:15px;color:var(--text3);margin-bottom:1.25rem;"><span id="lbl-code-sent-to">Code sent to</span> <strong id="reset-email-masked" style="color:var(--text1);"></strong></p>
+    <div id="reset-code-box" class="sms-box" style="display:none;margin-bottom:1rem;">
+      <strong>🔑 Your reset code:</strong><br>
+      <span id="reset-code-display" style="font-size:28px;font-weight:700;letter-spacing:8px;"></span>
+    </div>
     <div style="background:var(--surface);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-sm);padding:1rem;">
       <label id="lbl-enter-reset-code" style="margin-top:0;">Reset code</label>
       <input type="text" id="reset-code" maxlength="4" placeholder="3847" inputmode="numeric" style="letter-spacing:10px;font-size:28px;text-align:center;margin-bottom:4px;"/>
@@ -816,7 +820,7 @@ function initials(u){
   const l=(u.lname||'')[0]||'';
   return (f+l).toUpperCase()||'?';
 }
-function dateKey(offset){const d=new Date(today);d.setDate(d.getDate()+offset);const y=d.getFullYear();const m=String(d.getMonth()+1).padStart(2,'0');const day=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${day}`;}
+function dateKey(offset){const d=new Date(today);d.setDate(d.getDate()+offset);return d.toISOString().slice(0,10);}
 function offsetFromKey(dk){const d=new Date(dk);return Math.round((d-today)/86400000);}
 function dateLabel(offset){
   const d=new Date(today);d.setDate(d.getDate()+offset);
@@ -971,17 +975,28 @@ async function doForgotPin(){
   try{
     const res=await apiPost('/auth/forgot-pin',{phone});
     document.getElementById('reset-email-masked').textContent=res.maskedEmail||'your email';
-    document.getElementById('reset-code').value='';
-    document.getElementById('reset-pin').value='';
-    document.getElementById('reset-pin2').value='';
-    document.getElementById('reset-msg').innerHTML='';
-    // store phone for reset step
-    window._resetPhone=phone;
-    msg.innerHTML='';
-    showScreen('screen-reset');
+    if(res.devCode){const box=document.getElementById('reset-code-box');const disp=document.getElementById('reset-code-display');if(box&&disp){disp.textContent=res.devCode;box.style.display='block';}}
   }catch(e){
-    msg.innerHTML=`<div class="msg msg-error" style="margin-top:8px;">${e.message.includes('not found')?'Phone number not found.':e.message.includes('No email')?'No email on file. Contact the building manager.':'Failed to send code. Try again.'}</div>`;
+    // if phone not found, show error and stop
+    if(e.message.includes('not found')||e.message.includes('404')){
+      msg.innerHTML=`<div class="msg msg-error" style="margin-top:8px;">Phone number not found.</div>`;
+      return;
+    }
+    if(e.message.includes('No email')){
+      msg.innerHTML=`<div class="msg msg-error" style="margin-top:8px;">No email on file. Contact the building manager.</div>`;
+      return;
+    }
+    // email send failed but phone exists — still advance, user may not get email
+    document.getElementById('reset-email-masked').textContent='your email';
   }
+  // always advance if phone was found
+  document.getElementById('reset-code').value='';
+  document.getElementById('reset-pin').value='';
+  document.getElementById('reset-pin2').value='';
+  document.getElementById('reset-msg').innerHTML='';
+  window._resetPhone=phone;
+  msg.innerHTML='';
+  showScreen('screen-reset');
 }
 
 async function doResetPin(){
