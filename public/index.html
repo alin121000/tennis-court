@@ -1341,15 +1341,6 @@ async function revokeUser(id){
     showToast('Access revoked.');
   }catch(e){showToast('Error revoking access.');}
 }
-async function approveUser(id){
-  try{ await apiPost('/users/'+id+'/approve',{approved:true}); users=users.map(u=>u.id===id?{...u,approved:true}:u); renderApprovals(); showToast('Tenant approved.'); }catch(e){}
-}
-async function denyUser(id){
-  try{ await apiDelete('/users/'+id); users=users.filter(u=>u.id!==id); renderApprovals(); showToast('Registration denied.'); }catch(e){}
-}
-async function revokeUser2(id){
-  try{ await apiPost('/users/'+id+'/approve',{approved:false}); users=users.map(u=>u.id===id?{...u,approved:false}:u); renderApprovals(); }catch(e){}
-}
 async function markAllRead(){
   try{ await fetch(API+'/notifications/read-all',{method:'PATCH',credentials:'include'}); }catch(e){}
   notifications.forEach(n=>n.read=true);updateNotifBadge();renderNotifications();
