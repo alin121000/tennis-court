@@ -467,9 +467,9 @@ input[type="tel"]{direction:ltr;text-align:left;}
   <!-- BOOK -->
   <div id="tab-book">
     <div class="date-nav">
-      <button id="day-prev-btn" onclick="changeDay(-1)" style="display:none;">&#8592;</button>
+      <button id="day-prev-btn" onclick="changeDay(-1)">&#8592;</button>
       <span class="date-label" id="date-label"></span>
-      <button id="day-next-btn" onclick="changeDay(1)" style="display:none;">&#8594;</button>
+      <button id="day-next-btn" onclick="changeDay(1)">&#8594;</button>
     </div>
     <div style="padding:0 1rem;">
       <div id="msg-book"></div>
@@ -957,8 +957,6 @@ function mountApp(u){
   document.getElementById('admin-tabs').style.display=u.isAdmin?'flex':'none';
   document.getElementById('notif-btn').style.display=u.isAdmin?'inline-flex':'none';
   showScreen('screen-app');
-  document.getElementById('day-prev-btn').style.display='';
-  document.getElementById('day-next-btn').style.display='';
   updateNotifBadge();
   currentDay=0; schedDay=0;
   showTab('book');
@@ -1031,15 +1029,22 @@ async function goRegStep2(){
   try{
     const res=await apiPost('/auth/send-otp',{email,phone});
     pendingReg={fname,lname,apt,phone,email};
-    document.getElementById('sms-target').textContent=email;
-    const preview=res.devCode?`Dev mode — your code is: ${res.devCode}`:'Check your inbox for the verification code.';
-    document.getElementById('sms-preview').textContent=preview;
-    document.getElementById('reg-code').value='';
-    document.getElementById('reg2-msg').innerHTML='';
     msg.innerHTML='';
-    showScreen('screen-reg2');
+    if(res.skipVerification){
+      // skip email verification — go straight to PIN setup
+      document.getElementById('reg-pin').value='';
+      document.getElementById('reg-pin2').value='';
+      document.getElementById('reg3-msg').innerHTML='';
+      showScreen('screen-reg3');
+    } else {
+      document.getElementById('sms-target').textContent=email;
+      document.getElementById('sms-preview').textContent='Check your inbox for the verification code.';
+      document.getElementById('reg-code').value='';
+      document.getElementById('reg2-msg').innerHTML='';
+      showScreen('screen-reg2');
+    }
   }catch(e){
-    msg.innerHTML='<div class="msg msg-error">'+(e.message.includes('already')?'This phone is already registered.':'Error sending email. Try again.')+'</div>';
+    msg.innerHTML='<div class="msg msg-error">'+(e.message.includes('already')?'This phone is already registered.':'Error. Try again.')+'</div>';
   }
 }
 
