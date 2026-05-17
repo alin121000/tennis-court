@@ -109,6 +109,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',sans-
 label{font-size:13px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.03em;display:block;margin-bottom:6px;margin-top:16px;}
 input{width:100%;padding:13px 14px;border:1.5px solid var(--border2);border-radius:var(--radius-sm);font-size:16px;background:var(--surface);color:var(--text1);transition:border-color 0.2s;}
 input:focus{outline:none;border-color:var(--accent);}
+input[type="tel"]{direction:ltr;text-align:left;}
 
 /* Avatar */
 .avatar{border-radius:50%;background:var(--accent-light);display:flex;align-items:center;justify-content:center;font-weight:600;color:var(--accent);flex-shrink:0;}
@@ -195,7 +196,7 @@ input:focus{outline:none;border-color:var(--accent);}
     <div style="background:var(--surface);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-sm);margin-bottom:1rem;">
       <div style="padding:1rem 1rem 0.5rem;">
         <label id="lbl-phone" style="margin-top:0;">Phone number</label>
-        <input type="tel" id="login-phone" placeholder="050 1234567" oninput="fmtPhone(this)"/>
+        <input type="tel" id="login-phone" placeholder="050 1234567" oninput="fmtPhone(this)" style="direction:ltr;text-align:left;"/>
       </div>
       <div id="login-msg" style="padding:0 1rem;"></div>
       <div style="padding:0.75rem 1rem 1rem;">
@@ -227,6 +228,9 @@ input:focus{outline:none;border-color:var(--accent);}
         <button class="btn-primary" onclick="doLoginStep2()" id="btn-signin">Sign in</button>
       </div>
     </div>
+    <div style="text-align:center;margin-top:1rem;">
+      <button onclick="showScreen('screen-forgot')" style="font-size:15px;background:none;border:none;cursor:pointer;color:var(--accent);" id="btn-forgot-pin">Forgot PIN?</button>
+    </div>
   </div>
 </div>
 
@@ -241,7 +245,7 @@ input:focus{outline:none;border-color:var(--accent);}
     <div style="background:var(--surface);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-sm);">
       <div style="padding:1rem 1rem 0.5rem;">
         <label id="lbl-forgot-phone" style="margin-top:0;">Phone number</label>
-        <input type="tel" id="forgot-phone" placeholder="050 1234567" oninput="fmtPhone(this)" style="border:none;border-bottom:1.5px solid var(--border2);border-radius:0;padding:10px 0;background:transparent;"/>
+        <input type="tel" id="forgot-phone" placeholder="050 1234567" oninput="fmtPhone(this)" style="border:none;border-bottom:1.5px solid var(--border2);border-radius:0;padding:10px 0;background:transparent;direction:ltr;text-align:left;"/>
       </div>
       <div id="forgot-msg" style="padding:0 1rem;"></div>
       <div style="padding:0.75rem 1rem 1rem;">
@@ -288,7 +292,7 @@ input:focus{outline:none;border-color:var(--accent);}
     <label id="lbl-apt-num">Apartment number</label>
     <input type="number" id="reg-apt" placeholder="12" min="1" step="1" inputmode="numeric"/>
     <label id="lbl-phone-num">Phone number</label>
-    <input type="tel" id="reg-phone" placeholder="050 1234567" oninput="fmtPhone(this)" autocomplete="tel"/>
+    <input type="tel" id="reg-phone" placeholder="050 1234567" oninput="fmtPhone(this)" autocomplete="tel" style="direction:ltr;text-align:left;"/>
     <label id="lbl-email-ver">Email address (for verification)</label>
     <input type="email" id="reg-email" placeholder="dana@email.com" autocomplete="email"/>
     <div id="reg1-msg"></div>
@@ -418,7 +422,7 @@ input:focus{outline:none;border-color:var(--accent);}
         </div>
         <div class="profile-row">
           <span class="profile-label" id="lbl-profile-phone">Phone</span>
-          <span class="profile-value" id="profile-phone"></span>
+          <span class="profile-value" id="profile-phone" style="direction:ltr;unicode-bidi:embed;"></span>
         </div>
         <div class="profile-row">
           <span class="profile-label" id="lbl-profile-email">Email</span>
@@ -524,7 +528,7 @@ const MAX_ADVANCE_DAYS = 3;
 const HOURS = [];
 for(let h=6;h<=22;h++) HOURS.push(h);
 const today = new Date();
-today.setHours(12, 0, 0, 0);
+today.setHours(0,0,0,0);
 
 let currentDay=0, schedDay=0;
 let currentUser=null, loginCandidate=null;
