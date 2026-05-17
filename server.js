@@ -15,22 +15,24 @@ const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejec
 
 const nodemailer = require('nodemailer');
 
-// ── gmail mailer ──────────────────────────────────────────
+// ── zoho mailer ──────────────────────────────────────────
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'smtp.zoho.com',
+  port: 465,
+  secure: true,
   auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_PASS
+    user: process.env.ZOHO_USER,
+    pass: process.env.ZOHO_PASS
   }
 });
 
 async function sendEmail(to, subject, html) {
-  if (!process.env.GMAIL_USER || !process.env.GMAIL_PASS) {
+  if (!process.env.ZOHO_USER || !process.env.ZOHO_PASS) {
     console.log(`[DEV] Email to ${to}: ${subject}`);
     return;
   }
   await transporter.sendMail({
-    from: `"Court Booking" <${process.env.GMAIL_USER}>`,
+    from: `"Court Booking" <${process.env.ZOHO_USER}>`,
     to, subject, html
   });
 }
@@ -44,12 +46,7 @@ app.use(session({
   secret: process.env.SESSION_SECRET || 'change-me-in-production',
   resave: false,
   saveUninitialized: false,
-  cookie: { 
-  secure: true, 
-  sameSite: 'none', 
-  httpOnly: true, 
-  maxAge: 7 * 24 * 60 * 60 * 1000 
-}
+  cookie: { secure: true, sameSite: 'none', httpOnly: true, maxAge: 7 * 24 * 60 * 60 * 1000 }
 }));
 
 // ── auth middleware ───────────────────────────────────────
@@ -219,12 +216,15 @@ app.post('/api/auth/send-otp', async (req, res) => {
     if (existing.rows.length) return res.status(409).json({ error: 'Phone already registered' });
     const code = Math.floor(1000 + Math.random() * 9000).toString();
     otpCodes.set(email, { code, expires: Date.now() + 10 * 60 * 1000 });
-    await sendOTPEmail(email, code);
-    console.log('[OTP] Email sent to', email);
     res.json({ ok: true });
+    sendOTPEmail(email, code).then(() => {
+      console.log('[OTP] Email sent to', email);
+    }).catch(e => {
+      console.log('[OTP CODE]', email, code, '- email failed:', e.message);
+    });
   } catch(e) {
     console.error('send-otp error:', e.message);
-    res.status(500).json({ error: 'Failed to send email: ' + e.message });
+    res.status(500).json({ error: 'Failed to process: ' + e.message });
   }
 });
 
