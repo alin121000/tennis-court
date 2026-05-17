@@ -523,10 +523,8 @@ const API = window.location.hostname === 'localhost' ? 'http://localhost:3000/ap
 const MAX_ADVANCE_DAYS = 3;
 const HOURS = [];
 for(let h=6;h<=22;h++) HOURS.push(h);
-const now = new Date();
-const israelOffset = 3 * 60 * 60 * 1000;
-const today = new Date(now.getTime() + israelOffset);
-today.setHours(0,0,0,0);
+const today = new Date();
+today.setHours(12, 0, 0, 0);
 
 let currentDay=0, schedDay=0;
 let currentUser=null, loginCandidate=null;
