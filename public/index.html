@@ -1068,7 +1068,7 @@ async function submitReg(){
   const msg=document.getElementById('reg3-msg');
   if(pin.length!==4||!/^\d+$/.test(pin)){msg.innerHTML='<div class="msg msg-error">PIN must be exactly 4 digits.</div>';return;}
   if(pin!==pin2){msg.innerHTML='<div class="msg msg-error">PINs don\'t match.</div>';return;}
-  const code=document.getElementById('reg-code').value.trim();
+  const code='0000'; // no email verification needed
   try{
     const nu=await apiPost('/auth/register',{...pendingReg,pin,code});
     document.getElementById('reg-summary').innerHTML=`
