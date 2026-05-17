@@ -528,7 +528,7 @@ const MAX_ADVANCE_DAYS = 3;
 const HOURS = [];
 for(let h=6;h<=22;h++) HOURS.push(h);
 const today = new Date();
-today.setHours(12,0,0,0);
+today.setHours(0,0,0,0);
 
 let currentDay=0, schedDay=0;
 let currentUser=null, loginCandidate=null;
@@ -618,7 +618,7 @@ const LANGS = {
     enterResetCode:'הכנס את קוד האיפוס', newPinLabel:'PIN חדש', confirmNewPinLabel:'אשר PIN חדש',
     resetPin:'אפס PIN', pinResetSuccess:'!PIN אופס בהצלחה. כעת תוכל להתחבר', waitingTitle:'ממתין לאישור',
     waitingMsg:'מנהל הבניין טרם אישר את חשבונך.',
-    signOut:'יציאה', book:'הזמן מגרש', schedule:'לוח זמנים', myBookings:'המגרשים שלי',
+    signOut:'יציאה', book:'הזמנה', schedule:'לוח זמנים', myBookings:'ההזמנות שלי',
     tenants:'דיירים', stats:'סטטיסטיקה', approvals:'אישורים', alerts:'התראות', profile:'פרופיל',
     bookedAt:'הזמנת בשעה', onlyOne:'הזמנה אחת ביום בלבד.',
     limitReached:'מכסה הושגה', bookBtn:'הזמן', cancelBtn:'בטל', removeBtn:'הסר',
@@ -821,7 +821,8 @@ function initials(u){
   const l=(u.lname||'')[0]||'';
   return (f+l).toUpperCase()||'?';
 }
-function dateKey(offset){const d=new Date(today);d.setDate(d.getDate()+offset);const y=d.getFullYear();const m=String(d.getMonth()+1).padStart(2,'0');const day=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${day}`;}function offsetFromKey(dk){const d=new Date(dk);return Math.round((d-today)/86400000);}
+function dateKey(offset){const d=new Date(today);d.setDate(d.getDate()+offset);return d.toISOString().slice(0,10);}
+function offsetFromKey(dk){const d=new Date(dk);return Math.round((d-today)/86400000);}
 function dateLabel(offset){
   const d=new Date(today);d.setDate(d.getDate()+offset);
   const locale=lang==='he'?'he-IL':lang==='fr'?'fr-FR':'en-GB';
@@ -1273,15 +1274,8 @@ async function schedAdminCancel(key){
 
 function renderMyBookings(){
   const list=document.getElementById('my-bookings-list');
-const todayStr=dateKey(0);
-const nowHour=new Date().getHours();
-const mine=Object.entries(bookings).filter(([k,v])=>{
-  if(v!==currentUser.id) return false;
-  const[date,h]=k.split('_');
-  if(date<todayStr) return false;
-  if(date===todayStr&&parseInt(h)<=nowHour) return false;
-  return true;
-}).sort((a,b)=>a[0].localeCompare(b[0]));  if(!mine.length){list.innerHTML=`<div style="padding:2rem 0;text-align:center;color:var(--text3);font-size:15px;">${t('noBookings')}</div>`;return;}
+  const mine=Object.entries(bookings).filter(([k,v])=>v===currentUser.id).sort((a,b)=>a[0].localeCompare(b[0]));
+  if(!mine.length){list.innerHTML=`<div style="padding:2rem 0;text-align:center;color:var(--text3);font-size:15px;">${t('noBookings')}</div>`;return;}
   list.innerHTML='<div class="list-card">'+mine.map(([key])=>{
     const[date,hs]=key.split('_');const h=parseInt(hs);
     const dl=new Date(date).toLocaleDateString(lang==='he'?'he-IL':lang==='fr'?'fr-FR':'en-GB',{weekday:'short',day:'numeric',month:'short'});
@@ -1424,25 +1418,25 @@ function scrollHighlightUser(id){
 async function approveUser(id){
   try{
     await apiPost('/users/'+id+'/approve',{approved:true});
-    await loadAppData();
+    users=users.map(u=>u.id===id?{...u,approved:true}:u);
     renderApprovals();
-    showToast('Tenant approved.');
+    showToast(t('approve')+'!');
   }catch(e){showToast('Error approving tenant.');}
 }
 async function denyUser(id){
   try{
     await apiDelete('/users/'+id);
-    await loadAppData();
+    users=users.filter(u=>u.id!==id);
     renderApprovals();
-    showToast('Registration denied.');
+    showToast(t('deny')+'!');
   }catch(e){showToast('Error denying registration.');}
 }
 async function revokeUser2(id){
   try{
     await apiPost('/users/'+id+'/approve',{approved:false});
-    await loadAppData();
+    users=users.map(u=>u.id===id?{...u,approved:false}:u);
     renderApprovals();
-    showToast('Access revoked.');
+    showToast(t('revoke')+'!');
   }catch(e){showToast('Error revoking access.');}
 }
 
