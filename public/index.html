@@ -957,6 +957,8 @@ function mountApp(u){
   document.getElementById('admin-tabs').style.display=u.isAdmin?'flex':'none';
   document.getElementById('notif-btn').style.display=u.isAdmin?'inline-flex':'none';
   showScreen('screen-app');
+  document.getElementById('day-prev-btn').style.display='';
+  document.getElementById('day-next-btn').style.display='';
   updateNotifBadge();
   currentDay=0; schedDay=0;
   showTab('book');
