@@ -1273,8 +1273,15 @@ async function schedAdminCancel(key){
 
 function renderMyBookings(){
   const list=document.getElementById('my-bookings-list');
-  const mine=Object.entries(bookings).filter(([k,v])=>v===currentUser.id).sort((a,b)=>a[0].localeCompare(b[0]));
-  if(!mine.length){list.innerHTML=`<div style="padding:2rem 0;text-align:center;color:var(--text3);font-size:15px;">${t('noBookings')}</div>`;return;}
+const todayStr=dateKey(0);
+const nowHour=new Date().getHours();
+const mine=Object.entries(bookings).filter(([k,v])=>{
+  if(v!==currentUser.id) return false;
+  const[date,h]=k.split('_');
+  if(date<todayStr) return false;
+  if(date===todayStr&&parseInt(h)<=nowHour) return false;
+  return true;
+}).sort((a,b)=>a[0].localeCompare(b[0]));  if(!mine.length){list.innerHTML=`<div style="padding:2rem 0;text-align:center;color:var(--text3);font-size:15px;">${t('noBookings')}</div>`;return;}
   list.innerHTML='<div class="list-card">'+mine.map(([key])=>{
     const[date,hs]=key.split('_');const h=parseInt(hs);
     const dl=new Date(date).toLocaleDateString(lang==='he'?'he-IL':lang==='fr'?'fr-FR':'en-GB',{weekday:'short',day:'numeric',month:'short'});
