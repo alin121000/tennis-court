@@ -208,20 +208,16 @@ app.get('/api/auth/me', async (req, res) => {
 
 // ── routes: registration ──────────────────────────────────
 
-// Step 1: Send email OTP
+// Step 1: No email verification — skip straight to PIN
 app.post('/api/auth/send-otp', async (req, res) => {
   try {
     const { email, phone } = req.body;
     const existing = await pool.query('SELECT id FROM users WHERE phone=$1', [phone]);
     if (existing.rows.length) return res.status(409).json({ error: 'Phone already registered' });
-    const code = Math.floor(1000 + Math.random() * 9000).toString();
-    otpCodes.set(email, { code, expires: Date.now() + 10 * 60 * 1000 });
-    res.json({ ok: true });
-    sendOTPEmail(email, code).then(() => {
-      console.log('[OTP] Email sent to', email);
-    }).catch(e => {
-      console.log('[OTP CODE]', email, code, '- email failed:', e.message);
-    });
+    // No email verification — use a fixed code "0000" that always passes
+    const code = '0000';
+    otpCodes.set(email, { code, expires: Date.now() + 60 * 60 * 1000 });
+    res.json({ ok: true, skipVerification: true });
   } catch(e) {
     console.error('send-otp error:', e.message);
     res.status(500).json({ error: 'Failed to process: ' + e.message });
