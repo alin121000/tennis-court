@@ -13,28 +13,25 @@ const MAX_ADVANCE_DAYS = 3;
 // ── database ──────────────────────────────────────────────
 const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
 
-const nodemailer = require('nodemailer');
-
-// ── zoho mailer ──────────────────────────────────────────
-const transporter = nodemailer.createTransport({
-  host: 'smtp.zoho.com',
-  port: 465,
-  secure: true,
-  auth: {
-    user: process.env.ZOHO_USER,
-    pass: process.env.ZOHO_PASS
-  }
-});
-
+// ── email via Resend (HTTPS API — works on Render free tier) ──
 async function sendEmail(to, subject, html) {
-  if (!process.env.ZOHO_USER || !process.env.ZOHO_PASS) {
+  if (!process.env.RESEND_API_KEY) {
     console.log(`[DEV] Email to ${to}: ${subject}`);
     return;
   }
-  await transporter.sendMail({
-    from: `"Court Booking" <${process.env.ZOHO_USER}>`,
-    to, subject, html
+  const from = process.env.EMAIL_FROM || 'Court Booking <onboarding@resend.dev>';
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ from, to, subject, html })
   });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Resend error: ${err}`);
+  }
 }
 
 // ── middleware ────────────────────────────────────────────
@@ -338,21 +335,14 @@ app.post('/api/users/:id/approve', requireAuth, requireAdmin, async (req, res) =
   const { rows } = await pool.query('UPDATE users SET approved=$1 WHERE id=$2 RETURNING *', [approved, req.params.id]);
   if (!rows.length) return res.status(404).json({ error: 'User not found' });
   const user = rows[0];
-  res.json(rows[0]);
-  // send approval email in background (non-blocking)
-  if (approved && user.email) {
-    sendEmail(
-      user.email,
-      'Your court booking account has been approved!',
-      `<div style="font-family:sans-serif;max-width:400px;margin:0 auto;padding:24px;">
-        <h2>You're approved! 🎾</h2>
-        <p>Hi ${user.fname}, your court booking account has been approved by the building manager.</p>
-        <p>You can now sign in and start booking the court.</p>
-        <p style="color:#888;font-size:13px;">Sign in with your phone number and PIN.</p>
-      </div>`
-    ).then(() => console.log(`[APPROVE] Email sent to ${user.email}`))
-     .catch(e => console.error('Approval email error:', e.message));
+  // write in-app message if approving
+  if (approved) {
+    await pool.query(
+      'INSERT INTO user_messages (user_id, text) VALUES ($1, $2)',
+      [user.id, `✅ Your account has been approved! You can now sign in and book the court. Welcome! 🎾`]
+    );
   }
+  res.json(rows[0]);
 });
 
 app.delete('/api/users/:id', requireAuth, requireAdmin, async (req, res) => {
