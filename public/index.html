@@ -360,6 +360,16 @@ input[type="tel"]{direction:ltr;text-align:left;}
   </div>
 </div>
 
+<!-- IN-APP MESSAGE -->
+<div id="screen-message" class="screen">
+  <div style="text-align:center;padding:3rem 1rem;">
+    <div style="width:64px;height:64px;border-radius:50%;background:var(--green-light);margin:0 auto 1.5rem;display:flex;align-items:center;justify-content:center;font-size:28px;">🎾</div>
+    <p style="font-size:22px;font-weight:700;letter-spacing:-0.02em;margin-bottom:12px;color:var(--text1);" id="msg-screen-title">Message</p>
+    <div id="msg-screen-body" style="font-size:15px;color:var(--text2);line-height:1.6;margin-bottom:2rem;background:var(--surface);border-radius:var(--radius-lg);padding:1.25rem;box-shadow:var(--shadow-sm);text-align:left;"></div>
+    <button class="btn-primary" onclick="dismissMessage()" id="btn-dismiss-msg">Continue to app</button>
+  </div>
+</div>
+
 <!-- MAIN APP -->
 <div id="screen-app" class="screen">
   <div class="top-bar" style="padding:1rem 1rem 0.75rem;flex-wrap:wrap;gap:8px;">
@@ -954,10 +964,28 @@ async function doLoginStep2(){
     currentUser={...u,isAdmin:u.isAdmin};
     if(!u.approved&&!u.isAdmin){showScreen('screen-pending');return;}
     await loadAppData();
+    // check for unread in-app messages
+    const msgs=await apiGet('/auth/messages');
+    if(msgs&&msgs.length){
+      pendingMessages=msgs;
+      showMessageScreen(msgs[0].text);
+      return;
+    }
     mountApp(currentUser);
   }catch(e){
     msg.innerHTML='<div class="msg msg-error" style="margin-top:10px;">Incorrect PIN.</div>';
   }
+}
+
+let pendingMessages=[];
+function showMessageScreen(text){
+  document.getElementById('msg-screen-body').textContent=text;
+  showScreen('screen-message');
+}
+function dismissMessage(){
+  pendingMessages.shift();
+  if(pendingMessages.length){showMessageScreen(pendingMessages[0].text);return;}
+  mountApp(currentUser);
 }
 
 function mountApp(u){
@@ -1346,8 +1374,9 @@ function renderTenants(){
 }
 async function revokeUser(id){
   try{
-    await apiPost('/users/'+id+'/approve',{approved:false});
-    await loadAppData();
+    await apiDelete('/users/'+id);
+    users=users.filter(u=>u.id!==id);
+    Object.keys(bookings).forEach(k=>{ if(bookings[k]===id) delete bookings[k]; });
     renderTenants();
     showToast('Access revoked.');
   }catch(e){showToast('Error revoking access.');}
@@ -1436,14 +1465,17 @@ async function denyUser(id){
   try{
     await apiDelete('/users/'+id);
     users=users.filter(u=>u.id!==id);
+    // remove their bookings from local state too
+    Object.keys(bookings).forEach(k=>{ if(bookings[k]===id) delete bookings[k]; });
     renderApprovals();
     showToast(t('deny')+'!');
   }catch(e){showToast('Error denying registration.');}
 }
 async function revokeUser2(id){
   try{
-    await apiPost('/users/'+id+'/approve',{approved:false});
-    users=users.map(u=>u.id===id?{...u,approved:false}:u);
+    await apiDelete('/users/'+id);
+    users=users.filter(u=>u.id!==id);
+    Object.keys(bookings).forEach(k=>{ if(bookings[k]===id) delete bookings[k]; });
     renderApprovals();
     showToast(t('revoke')+'!');
   }catch(e){showToast('Error revoking access.');}
