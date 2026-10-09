@@ -67,9 +67,13 @@ function dateKey(offsetFromToday) {
   return d.toISOString().slice(0,10);
 }
 function isWithinAdvanceLimit(dateStr) {
-  const today = new Date(); today.setHours(0,0,0,0);
-  const target = new Date(dateStr);
-  const diffDays = Math.round((target - today) / 86400000);
+  // Use Israel time (UTC+3) to determine "today"
+  const now = new Date();
+  const israelOffset = 3 * 60;
+  const israelTime = new Date(now.getTime() + israelOffset * 60000);
+  const todayStr = israelTime.toISOString().slice(0, 10);
+  const target = dateStr.slice(0, 10);
+  const diffDays = Math.round((new Date(target) - new Date(todayStr)) / 86400000);
   return diffDays >= 0 && diffDays <= MAX_ADVANCE_DAYS;
 }
 
@@ -125,6 +129,8 @@ app.post('/api/auth/login', async (req, res) => {
     console.log('[LOGIN] bcrypt match:', match);
   }
   if (!match) return res.status(401).json({ error: 'Invalid credentials' });
+  // Block unapproved non-admin users from logging in
+  if (!user.approved && !user.is_admin) return res.status(403).json({ error: 'Account not yet approved' });
   req.session.userId = user.id;
   req.session.isAdmin = user.is_admin;
   await new Promise((resolve, reject) => req.session.save(err => err ? reject(err) : resolve()));
@@ -332,22 +338,21 @@ app.post('/api/users/:id/approve', requireAuth, requireAdmin, async (req, res) =
   const { rows } = await pool.query('UPDATE users SET approved=$1 WHERE id=$2 RETURNING *', [approved, req.params.id]);
   if (!rows.length) return res.status(404).json({ error: 'User not found' });
   const user = rows[0];
-  // send approval email if being approved and has email
-  if (approved && user.email) {
-    try {
-      await sendEmail(
-        user.email,
-        'Your court booking account has been approved!',
-        `<div style="font-family:sans-serif;max-width:400px;margin:0 auto;padding:24px;">
-          <h2>You're approved! 🎾</h2>
-          <p>Hi ${user.fname}, your court booking account has been approved by the building manager.</p>
-          <p>You can now sign in and start booking the court.</p>
-          <p style="color:#888;font-size:13px;">Sign in with your phone number and PIN.</p>
-        </div>`
-      );
-    } catch(e) { console.error('Approval email error:', e.message); }
-  }
   res.json(rows[0]);
+  // send approval email in background (non-blocking)
+  if (approved && user.email) {
+    sendEmail(
+      user.email,
+      'Your court booking account has been approved!',
+      `<div style="font-family:sans-serif;max-width:400px;margin:0 auto;padding:24px;">
+        <h2>You're approved! 🎾</h2>
+        <p>Hi ${user.fname}, your court booking account has been approved by the building manager.</p>
+        <p>You can now sign in and start booking the court.</p>
+        <p style="color:#888;font-size:13px;">Sign in with your phone number and PIN.</p>
+      </div>`
+    ).then(() => console.log(`[APPROVE] Email sent to ${user.email}`))
+     .catch(e => console.error('Approval email error:', e.message));
+  }
 });
 
 app.delete('/api/users/:id', requireAuth, requireAdmin, async (req, res) => {
